@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pancake Assistant Pro</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <h1>Pancake Assistant Pro</h1>
+      <p class="byline">By Bố Hoàng No1</p>
+      <label class="feature">
+        <span>
+          <strong>Hỗ trợ lên đơn</strong>
+          <small>Mở “Tạo mới” và chọn gợi ý địa chỉ đầu tiên khi bấm hội thoại.</small>
+        </span>
+        <input id="auto-order" type="checkbox" aria-label="Bật hỗ trợ lên đơn">
+      </label>
+      <label class="feature second-feature">
+        <span>
+          <strong>Tự điền ghi chú in</strong>
+          <small>Khi bật miễn phí giao hàng, tóm tắt tên và số kg sản phẩm vào ghi chú in.</small>
+        </span>
+        <input id="auto-print-note" type="checkbox" aria-label="Bật tự điền ghi chú in">
+      </label>
+      <label class="feature second-feature">
+        <span>
+          <strong>Tự tạo đơn</strong>
+          <small>Sau khi điền và lưu ghi chú in, tự bấm “Tạo đơn”. Cần bật “Tự điền ghi chú in”.</small>
+        </span>
+        <input id="auto-submit-order" type="checkbox" aria-label="Bật tự tạo đơn">
+      </label>
+      <label class="feature second-feature">
+        <span>
+          <strong>Chuẩn hóa tag sau tạo đơn</strong>
+          <small>Sau khi đơn được tạo, chỉ giữ “Đã Lên Đơn” và “Đã Gửi”. Áp dụng cả khi bạn tự bấm “Tạo đơn”.</small>
+        </span>
+        <input id="auto-order-tags" type="checkbox" aria-label="Bật chuẩn hóa tag sau tạo đơn">
+      </label>
+      <section class="diagnostics">
+        <h2>Kiểm tra giao diện</h2>
+        <p>Ghi nhận cấu trúc của 4 phần tử bạn bấm, không lấy nội dung chat hoặc địa chỉ.</p>
+        <button id="record-ui" type="button">Bắt đầu ghi nhận</button>
+        <button id="copy-ui" type="button" disabled>Sao chép kết quả</button>
+        <small id="record-status"></small>
+      </section>
+      <p id="site-status" role="status"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

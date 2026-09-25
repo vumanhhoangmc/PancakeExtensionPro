@@ -1,0 +1,18 @@
+:root { color-scheme: light; font-family: Arial, sans-serif; }
+body { width: 310px; margin: 0; color: #1c2b3d; }
+main { padding: 18px; }
+h1 { margin: 0; font-size: 17px; }
+.byline { margin: 4px 0 17px; color: #607086; font-size: 12px; }
+.feature { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+.feature span { flex: 1; }
+.feature strong { display: block; font-size: 14px; }
+.feature small { display: block; margin-top: 5px; color: #607086; line-height: 1.4; }
+.feature input { width: 19px; height: 19px; accent-color: #2865d6; cursor: pointer; }
+.second-feature { border-top: 1px solid #dce3eb; margin-top: 14px; padding-top: 14px; }
+#site-status { margin: 14px 0 0; color: #68798d; font-size: 12px; }
+.diagnostics { border-top: 1px solid #dce3eb; margin-top: 16px; padding-top: 13px; }
+.diagnostics h2 { margin: 0; font-size: 13px; }
+.diagnostics p { margin: 6px 0 10px; color: #607086; font-size: 12px; line-height: 1.4; }
+.diagnostics button { border: 1px solid #c6d3e3; border-radius: 5px; background: #fff; padding: 6px 9px; margin: 0 5px 8px 0; cursor: pointer; }
+.diagnostics button:disabled { opacity: .45; cursor: default; }
+.diagnostics small { display: block; color: #607086; }
