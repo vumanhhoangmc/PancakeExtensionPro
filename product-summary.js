@@ -10,7 +10,7 @@
       const rawName = String(product.name || '').trim();
       if (!rawName || !Number.isFinite(quantity) || quantity <= 0) return null;
 
-      const name = rawName.replace(/^\(\d{4}\)\s*/, '').trim();
+      const name = rawName.replace(/^\(\s*\d{4}\s*\)\s*/, '').trim();
       const size = name.match(/(?:^|\s)(\d+(?:[.,]\d+)?)\s*(kg|g)(?=\s|$)/i);
       if (size) {
         const amount = Number(size[1].replace(',', '.'));

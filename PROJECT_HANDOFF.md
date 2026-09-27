@@ -1,16 +1,18 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 26/09/2026. Phiên bản manifest: `0.2.0`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại của Pancake. Mục tiêu là giảm thao tác lên đơn, với **mỗi tính năng có công tắc bật/tắt riêng**. Trang đích là `https://pancake.vn/multi_pages`; logic trong `content.js` còn kiểm tra đường dẫn `/multi_pages` trước khi thao tác. Không có backend, build tool, API key hay cookie trong dự án.
+Cập nhật: 27/09/2026. Phiên bản manifest: `0.3.0`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại của Pancake. Mục tiêu là giảm thao tác lên đơn, với **mỗi tính năng có công tắc bật/tắt riêng**. Trang đích là `https://pancake.vn/multi_pages`; logic trong `content.js` còn kiểm tra đường dẫn `/multi_pages` trước khi thao tác. Không có backend, build tool, API key hay cookie trong dự án.
 
 ## Cấu trúc dự án
 
 | File | Vai trò |
 | --- | --- |
-| `manifest.json` | Tên, mô tả, quyền, khai báo content scripts và popup. Nạp `product-summary.js` trước `content.js`. |
-| `popup.html`, `popup.css`, `popup.js` | Giao diện bốn công tắc và chế độ ghi nhận cấu trúc phần tử. Lưu lựa chọn vào `chrome.storage.local`. |
+| `manifest.json` | Tên, mô tả, quyền, khai báo content scripts và popup. Nạp `product-summary.js`, `pricing.js` trước `content.js`. |
+| `popup.html`, `popup.css`, `popup.js` | Giao diện năm công tắc và chế độ ghi nhận cấu trúc phần tử. Lưu lựa chọn vào `chrome.storage.local`. |
 | `content.js` | Nghe sự kiện trên trang, tự động mở form, điền ghi chú, tùy chọn tạo đơn và chuẩn hóa tag. |
 | `product-summary.js` | Hàm thuần `summarizeProducts(products)`; chạy trong content script và cũng xuất CommonJS để thử bằng Node. |
 | `product-summary.test.js` | Kiểm tra phép nhân quy cách với số lượng, gộp sản phẩm cùng loại và xử lý dữ liệu thiếu. |
+| `pricing.js` | Hàm thuần `calculateDiscount(products, orderTotal)`; bảng giá Miến Sâm và điều kiện áp dụng. |
+| `pricing.test.js` | Kiểm tra giá 1–6kg và 10kg, đơn lẫn sản phẩm khác, mốc không hỗ trợ, mức giảm. |
 | `README.md` | Hướng dẫn cài đặt, sử dụng và chuyển sang máy khác. |
 | `AGENTS.md` | Điểm bắt đầu ngắn gọn cho AI tiếp quản dự án. |
 
@@ -30,6 +32,7 @@ Manifest hiện yêu cầu `storage`, `activeTab` và quyền truy cập `pancak
 | --- | --- | --- |
 | `autoOrder` | `true` | Bấm hội thoại → mở tab Tạo mới → chọn gợi ý địa chỉ đầu tiên. |
 | `autoPrintNote` | `true` | Khi người dùng tích Miễn phí giao hàng → tóm tắt sản phẩm vào Ghi chú in. |
+| `autoMienSamPrice` | `false` | Khi người dùng tích Miễn phí giao hàng → điều chỉnh Giảm giá cho đơn chỉ có Miến Sâm nếu tổng tiền vượt giá mốc. Hoạt động độc lập với ghi chú. |
 | `autoSubmitOrder` | `false` | Sau khi ghi chú đã điền, lưu ghi chú rồi bấm Tạo đơn. Chỉ có tác dụng khi `autoPrintNote` bật. |
 | `autoOrderTags` | `false` | Sau khi đơn mới được xác nhận, chỉ giữ Đã Lên Đơn và Đã Gửi. Áp dụng cho cả nút Tạo đơn bấm tay. |
 | `uiRecording` | `false` | Chế độ chẩn đoán ghi nhận 4 lần bấm; ngăn các luồng tự động đang chạy. |
@@ -45,7 +48,11 @@ Extension **không tự tích Miễn phí giao hàng**. Khi checkbox này chuy�
 
 Pancake từng hiển thị dòng phụ `1000 g` ngay cả cho sản phẩm tên `2KG`; **đừng** thay thuật toán bằng cách đọc dòng phụ đó. Ghi chú cũ có nội dung khác sẽ được giữ lại và nối thêm bằng ` | `. Nếu ghi chú cũ chỉ là tóm tắt khối lượng, extension thay nó bằng tóm tắt mới. React textarea được cập nhật bằng native setter của `HTMLTextAreaElement` và sự kiện `input` để Pancake nhận trạng thái mới. Khi `autoSubmitOrder` tắt, extension **chỉ điền**, để người dùng tự bấm Lưu.
 
-### 3. Tùy chọn tự tạo đơn
+### 3. Điều chỉnh giá và tùy chọn tự tạo đơn
+
+Trước khi điền ghi chú, nếu `autoMienSamPrice` bật, `adjustMienSamPrice()` đọc các dòng sản phẩm, **Tổng giá trị đơn hàng** và đối chiếu bảng giá trong `pricing.js`: 1kg 95.000đ, 2kg 160.000đ, 3kg 220.000đ, 4kg 280.000đ, 5kg 350.000đ, 6kg 420.000đ, 10kg 600.000đ. Chỉ nhận đơn mà mọi tên sản phẩm là `Miến Sâm`, `Miến Sâm Sợi Nhỏ/To` hoặc biến thể `Miến Sợi Nhỏ/To` thiếu chữ “Sâm” đã thấy trên Pancake, có quy cách `kg/g` trong tên và số lượng nguyên dương. Quy cách nhân số lượng rồi cộng khối lượng, không phân biệt sợi to/nhỏ. 7–9kg và các khối lượng không có mốc được bỏ qua. Nếu tổng tiền vượt giá mốc, điền số tiền chênh lệch **tuyệt đối** vào ô Giảm giá và chờ tổng cuối bằng giá mốc. Nếu không xác nhận được, ghi chú vẫn có thể điền nhưng luồng **tự tạo đơn** không chạy. Nếu tổng tiền bằng/thấp hơn mốc, không sửa ô Giảm giá.
+
+Ô Giảm giá được cập nhật qua native setter của `HTMLInputElement`, sự kiện `input`/`change` và blur để Pancake nhận thay đổi. Không đọc giá ở chân form làm tổng trước giảm; chân form chỉ dùng để xác nhận kết quả. Logic giá bắt đầu khi **người dùng tích** Miễn phí giao hàng; extension vẫn không tự tích checkbox đó.
 
 Khi `autoSubmitOrder` và `autoPrintNote` đều bật, `submitAfterNote()` đợi React nhận nội dung, bấm **Lưu** trong `.note-print-order`, đợi textarea đóng, kiểm tra lại rằng hội thoại vẫn là hội thoại ban đầu, checkbox miễn phí giao hàng vẫn tích và tóm tắt sản phẩm chưa đổi, rồi bấm nút **Tạo đơn** ở `.crm-platform .box-footer`. Không tạo đơn nếu thiếu sản phẩm, trình soạn ghi chú không đóng hoặc người dùng đổi hội thoại. Bấm nút thủ công vẫn được, bất kể công tắc tự tạo đơn.
 
@@ -70,6 +77,9 @@ Những bộ chọn sau được đọc từ trang Pancake đang đăng nhập t
 | Tên sản phẩm | `.col-product-name .info-order-item > .font-weight-500` trong dòng sản phẩm |
 | Số lượng | `.table-product > .ant-col-4 input.ant-input-number-input` trong dòng sản phẩm |
 | Checkbox miễn phí giao hàng | `label` trong form có chữ `Miễn phí giao hàng`, chứa `input[type="checkbox"]` |
+| Tổng trước giảm | `.crm-platform .view-order .content-order-payment > .row-content-payment` có nhãn `Tổng giá trị đơn hàng` |
+| Ô Giảm giá | Hàng cùng selector có nhãn `Giảm giá`, chứa `input.ant-input-number-input` |
+| Tổng sau giảm | `.crm-platform .box-footer .text-final-price` |
 | Ghi chú in | `.crm-platform .note-print-order`; nút lưu là `button.btn-cancel-note` có chữ `Lưu` |
 | Nút Tạo đơn | `.crm-platform .box-footer button.btn-save-order` |
 | Danh sách đơn gần đây | `.crm-platform .recent-orders .ant-collapse-header` chứa ID số của đơn |
@@ -85,6 +95,7 @@ Chạy từ thư mục dự án:
 node --check content.js
 node --check popup.js
 node --test product-summary.test.js
+node --test pricing.test.js
 ```
 
 Sau đó tải lại extension và tab Pancake, thử lần lượt các công tắc trên hội thoại thử nghiệm. Với tính năng tag, quan sát trước/sau ở dải tag: cuối cùng chỉ còn hai dấu `.ellipse` trên **Đã Lên Đơn** và **Đã Gửi**. Đừng bấm **Tạo đơn** trên đơn thật chỉ để thử bộ chọn; thao tác này tạo đơn thật. Có thể dùng chế độ **Kiểm tra giao diện** ở popup để ghi lại cấu trúc bốn phần tử khi Pancake đổi DOM.

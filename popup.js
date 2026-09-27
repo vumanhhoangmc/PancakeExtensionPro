@@ -1,5 +1,6 @@
 const toggle = document.getElementById('auto-order');
 const noteToggle = document.getElementById('auto-print-note');
+const priceToggle = document.getElementById('auto-mien-sam-price');
 const submitToggle = document.getElementById('auto-submit-order');
 const tagsToggle = document.getElementById('auto-order-tags');
 const status = document.getElementById('site-status');
@@ -15,10 +16,12 @@ function updateRecordStatus({ uiRecording = false, uiEvents = [] }) {
     : uiEvents.length ? `Đã có ${uiEvents.length} thao tác để sao chép.` : '';
 }
 
-chrome.storage.local.get({ autoOrder: true, autoPrintNote: true, autoSubmitOrder: false, autoOrderTags: false },
-  ({ autoOrder, autoPrintNote, autoSubmitOrder, autoOrderTags }) => {
+chrome.storage.local.get({ autoOrder: true, autoPrintNote: true, autoMienSamPrice: false,
+  autoSubmitOrder: false, autoOrderTags: false },
+  ({ autoOrder, autoPrintNote, autoMienSamPrice, autoSubmitOrder, autoOrderTags }) => {
   toggle.checked = autoOrder;
   noteToggle.checked = autoPrintNote;
+  priceToggle.checked = autoMienSamPrice;
   submitToggle.checked = autoSubmitOrder;
   tagsToggle.checked = autoOrderTags;
 });
@@ -28,6 +31,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   if (changes.autoOrder) toggle.checked = changes.autoOrder.newValue;
   if (changes.autoPrintNote) noteToggle.checked = changes.autoPrintNote.newValue;
+  if (changes.autoMienSamPrice) priceToggle.checked = changes.autoMienSamPrice.newValue;
   if (changes.autoSubmitOrder) submitToggle.checked = changes.autoSubmitOrder.newValue;
   if (changes.autoOrderTags) tagsToggle.checked = changes.autoOrderTags.newValue;
   if (changes.uiRecording || changes.uiEvents) {
@@ -41,6 +45,10 @@ toggle.addEventListener('change', () => {
 
 noteToggle.addEventListener('change', () => {
   chrome.storage.local.set({ autoPrintNote: noteToggle.checked });
+});
+
+priceToggle.addEventListener('change', () => {
+  chrome.storage.local.set({ autoMienSamPrice: priceToggle.checked });
 });
 
 submitToggle.addEventListener('change', () => {

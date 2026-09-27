@@ -21,10 +21,25 @@ Nếu chuyển bằng Git thay vì sao chép thư mục, hãy commit và đẩy 
 | --- | --- | --- |
 | Hỗ trợ lên đơn | Bật | Khi bấm một hội thoại, mở **Tạo mới**, bấm **Địa chỉ**, chọn gợi ý đầu tiên nếu có. |
 | Tự điền ghi chú in | Bật | Khi **bạn** tích **Miễn phí giao hàng**, đọc sản phẩm, nhân quy cách với số lượng và điền tóm tắt vào **Ghi chú in**. |
+| Tự điều chỉnh giá Miến Sâm | Tắt | Khi **bạn** tích **Miễn phí giao hàng**, nếu mọi sản phẩm đều là Miến Sâm và tổng kg có trong bảng giá, điền mức chênh lệch vào **Giảm giá** khi tổng tiền lớn hơn giá mốc. |
 | Tự tạo đơn | Tắt | Sau bước trên, bấm **Lưu** ghi chú, chờ trình soạn đóng, rồi bấm **Tạo đơn**. Chỉ hoạt động khi **Tự điền ghi chú in** cũng bật. |
 | Chuẩn hóa tag sau tạo đơn | Tắt | Sau lần bấm **Tạo đơn** tự động hoặc thủ công, đợi Pancake xác nhận có đơn mới, rồi chỉ giữ **Đã Lên Đơn** và **Đã Gửi**. |
 
 Extension **không tự tích Miễn phí giao hàng**. Khi **Tự tạo đơn** tắt, bạn tự xem lại, lưu ghi chú và tạo đơn. Khi **Chuẩn hóa tag** tắt, extension không sửa tag.
+
+### Bảng giá Miến Sâm
+
+| Tổng kg | Giá |
+| --- | ---: |
+| 1kg | 95.000đ |
+| 2kg | 160.000đ |
+| 3kg | 220.000đ |
+| 4kg | 280.000đ |
+| 5kg | 350.000đ |
+| 6kg | 420.000đ |
+| 10kg | 600.000đ |
+
+Extension đọc quy cách từ tên từng sản phẩm, nhân với số lượng rồi cộng tổng kg, không phân biệt sợi to hay nhỏ. Tên **Miến Sợi Nhỏ/To** cũng được tính vì trên Pancake có biến thể này thiếu chữ “Sâm”; các loại miến khác không được tính. Ví dụ 3kg có **Tổng giá trị đơn hàng** 240.000đ sẽ nhập **Giảm giá** 20.000đ để tổng cuối là 220.000đ. Mức giảm được nhập là số tiền tuyệt đối, không cộng dồn qua các lần chạy. Nếu tổng tiền đã bằng hoặc thấp hơn giá mốc, extension không chỉnh giảm giá. Đơn có sản phẩm khác, thiếu quy cách hoặc tổng 7–9kg sẽ được bỏ qua; các khối lượng không có trong bảng cũng vậy. Công tắc này hoạt động độc lập với **Tự điền ghi chú in**; nếu đang bật **Tự tạo đơn** mà việc điền giá đủ điều kiện không được xác nhận trên giao diện, extension sẽ không tự bấm **Tạo đơn**.
 
 ### Ví dụ ghi chú
 
@@ -37,7 +52,7 @@ Extension lấy quy cách từ **tên sản phẩm**, không lấy dòng khối 
 
 ## Kiểm tra nhanh
 
-Chạy `node --test product-summary.test.js` để kiểm tra phép tính khối lượng. Có thể chạy `node --check content.js` và `node --check popup.js` để kiểm tra cú pháp. Kiểm thử luồng tạo đơn và tag trên một hội thoại thử nghiệm; nút **Tạo đơn** có tác dụng thật trên Pancake.
+Chạy `node --test product-summary.test.js pricing.test.js` để kiểm tra phép tính khối lượng và bảng giá. Có thể chạy `node --check content.js` và `node --check popup.js` để kiểm tra cú pháp. Kiểm thử luồng tạo đơn và tag trên một hội thoại thử nghiệm; nút **Tạo đơn** có tác dụng thật trên Pancake.
 
 ## Dành cho người phát triển hoặc AI tiếp theo
 

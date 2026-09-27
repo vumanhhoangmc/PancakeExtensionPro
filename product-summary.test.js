@@ -14,3 +14,8 @@ test('giữ lại sản phẩm không có quy cách và không ghi chú thiếu 
   assert.equal(summarizeProducts([{ name: 'Măng khô', quantity: '2' }]), '2 x măng khô');
   assert.equal(summarizeProducts([{ name: '1KG Miến Sâm', quantity: '' }]), null);
 });
+
+test('bỏ tiền tố năm có khoảng trắng trước dấu đóng', () => {
+  assert.equal(summarizeProducts([{ name: '(2026 ) 2Kg Miến Sợi Nhỏ', quantity: 1 }]),
+    '2kg miến sợi nhỏ');
+});

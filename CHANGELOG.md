@@ -1,5 +1,11 @@
 # Lịch sử phát triển
 
+## 0.3.0 — 27/09/2026
+
+- Thêm công tắc **Tự điều chỉnh giá Miến Sâm**. Sau khi người dùng tích Miễn phí giao hàng, cộng kg theo tên và số lượng của toàn bộ sản phẩm Miến Sâm, đối chiếu mốc 1–6kg và 10kg, rồi điền chênh lệch vào Giảm giá nếu tổng tiền cao hơn bảng giá.
+- Bỏ qua 7–9kg, khối lượng không có mốc giá, dữ liệu thiếu và đơn có sản phẩm khác. Chờ giao diện xác nhận tổng cuối trước khi luồng tự tạo đơn tiếp tục.
+- Thêm `pricing.js` và `pricing.test.js` để kiểm tra phép tính tách khỏi thao tác DOM.
+
 ## 0.2.0 — 26/09/2026
 
 - Đổi tên extension và popup thành **Pancake Assistant Pro**, đặt mô tả Chrome là **DEV: Bố Hoàng No1**.

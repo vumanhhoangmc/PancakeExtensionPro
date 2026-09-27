@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Pancake Assistant Pro",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "DEV: Bố Hoàng No1",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://pancake.vn/*", "https://*.pancake.vn/*"],
   "content_scripts": [
     {
       "matches": ["https://pancake.vn/*", "https://*.pancake.vn/*"],
-      "js": ["product-summary.js", "content.js"],
+      "js": ["product-summary.js", "pricing.js", "content.js"],
       "run_at": "document_idle"
     }
   ],

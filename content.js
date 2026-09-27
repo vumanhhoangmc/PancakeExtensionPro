@@ -7,6 +7,8 @@
   let runId = 0;
   let autoPrintNote = false;
   let noteRunId = 0;
+  let autoMienSamPrice = false;
+  let priceRunId = 0;
   let autoSubmitOrder = false;
   let autoSubmitRunId = 0;
   let autoOrderTags = false;
@@ -15,12 +17,13 @@
   let recordedCount = 0;
   const generatedNotes = new WeakMap();
 
-  chrome.storage.local.get({ autoOrder: true, autoPrintNote: true, autoSubmitOrder: false,
+  chrome.storage.local.get({ autoOrder: true, autoPrintNote: true, autoMienSamPrice: false, autoSubmitOrder: false,
     autoOrderTags: false, uiRecording: false, uiEvents: [] },
     ({ autoOrder, autoPrintNote: noteEnabled, autoSubmitOrder: submitEnabled,
-      autoOrderTags: tagsEnabled, uiRecording, uiEvents }) => {
+      autoMienSamPrice: priceEnabled, autoOrderTags: tagsEnabled, uiRecording, uiEvents }) => {
     enabled = autoOrder;
     autoPrintNote = noteEnabled;
+    autoMienSamPrice = priceEnabled;
     autoSubmitOrder = submitEnabled;
     autoOrderTags = tagsEnabled;
     recording = uiRecording;
@@ -42,6 +45,10 @@
         autoSubmitRunId++;
       }
     }
+    if (changes.autoMienSamPrice) {
+      autoMienSamPrice = changes.autoMienSamPrice.newValue;
+      if (!autoMienSamPrice) priceRunId++;
+    }
     if (changes.autoSubmitOrder) {
       autoSubmitOrder = changes.autoSubmitOrder.newValue;
       if (!autoSubmitOrder) autoSubmitRunId++;
@@ -54,6 +61,7 @@
       recording = changes.uiRecording.newValue;
       if (recording) {
         noteRunId++;
+        priceRunId++;
         autoSubmitRunId++;
         tagRunId++;
       }
@@ -174,7 +182,7 @@
     return onlyWeightSummary ? summary : `${existing} | ${summary}`;
   }
 
-  async function fillPrintNote(id, submitId, conversationId) {
+  async function fillPrintNote(id, submitId, conversationId, priceReady) {
     const products = orderProducts();
     const summary = globalThis.PancakeProductSummary?.summarizeProducts(products);
     if (!summary || id !== noteRunId) return;
@@ -197,7 +205,7 @@
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
       generatedNotes.set(textarea, summary);
     }
-    if (autoSubmitOrder) await submitAfterNote(section, id, submitId, conversationId, summary);
+    if (autoSubmitOrder && priceReady) await submitAfterNote(section, id, submitId, conversationId, summary);
   }
 
   const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -206,6 +214,76 @@
     const label = [...document.querySelectorAll('.crm-platform .view-order label')]
       .find((element) => normalizedText(element) === 'Miễn phí giao hàng');
     return label?.querySelector('input[type="checkbox"]') || null;
+  }
+
+  function paymentRow(label) {
+    return [...document.querySelectorAll('.crm-platform .view-order .content-order-payment > .row-content-payment')]
+      .find((row) => normalizedText(row.firstElementChild) === label && visible(row)) || null;
+  }
+
+  function money(text) {
+    const value = String(text || '').trim();
+    if (!/^\d[\d.,\s]*\s*đ?$/i.test(value)) return null;
+    const amount = Number(value.replace(/\D/g, ''));
+    return Number.isSafeInteger(amount) ? amount : null;
+  }
+
+  function discountField() {
+    return paymentRow('Giảm giá')?.querySelector('input.ant-input-number-input') || null;
+  }
+
+  function priceVerifiedForCurrentOrder() {
+    if (!autoMienSamPrice) return true;
+    const total = money(paymentRow('Tổng giá trị đơn hàng')?.lastElementChild?.textContent);
+    if (total === null || !globalThis.PancakePricing?.calculateDiscount) return false;
+    const price = globalThis.PancakePricing.calculateDiscount(orderProducts(), total);
+    if (!price || price.discount === 0) return true;
+    return money(discountField()?.value) === price.discount &&
+      money(document.querySelector('.crm-platform .box-footer .text-final-price')?.textContent) === price.targetTotal;
+  }
+
+  async function adjustMienSamPrice(id, conversationId) {
+    const current = () => autoMienSamPrice && !recording && id === priceRunId &&
+      conversationId && selectedConversationId() === conversationId && freeShippingInput()?.checked;
+    if (!current()) return false;
+    const products = orderProducts();
+    const totalRow = paymentRow('Tổng giá trị đơn hàng');
+    const total = money(totalRow?.lastElementChild?.textContent);
+    if (total === null) return false;
+    if (!globalThis.PancakePricing?.calculateDiscount) return false;
+    const price = globalThis.PancakePricing.calculateDiscount(products, total);
+    if (!price) return true; // Mixed products, missing data, or no price for this weight.
+    if (price.discount === 0) return true;
+
+    const field = discountField();
+    if (!field || !visible(field)) return false;
+    const sameOrder = () => current() && JSON.stringify(orderProducts()) === JSON.stringify(products) &&
+      money(paymentRow('Tổng giá trị đơn hàng')?.lastElementChild?.textContent) === total;
+    if (!sameOrder()) return false;
+
+    if (money(field.value) !== price.discount) {
+      field.focus();
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+      setter.call(field, String(price.discount));
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+      field.blur();
+    }
+
+    const until = Date.now() + 2000;
+    while (sameOrder() && Date.now() < until) {
+      const finalTotal = money(document.querySelector('.crm-platform .box-footer .text-final-price')?.textContent);
+      if (money(discountField()?.value) === price.discount && finalTotal === price.targetTotal) return true;
+      await pause(80);
+    }
+    return false;
+  }
+
+  async function handleFreeShipping(noteId, submitId, priceId, conversationId) {
+    await pause(80);
+    const priceReady = !autoMienSamPrice || await adjustMienSamPrice(priceId, conversationId);
+    if (autoPrintNote && !recording && noteId === noteRunId && freeShippingInput()?.checked)
+      await fillPrintNote(noteId, submitId, conversationId, priceReady);
   }
 
   async function submitAfterNote(section, noteId, submitId, conversationId, summary) {
@@ -223,6 +301,7 @@
     while (current() && Date.now() < until && section.querySelector('textarea')) await pause(100);
     if (!current() || section.querySelector('textarea')) return;
     if (globalThis.PancakeProductSummary?.summarizeProducts(orderProducts()) !== summary) return;
+    if (!priceVerifiedForCurrentOrder()) return;
 
     const create = document.querySelector('.crm-platform .box-footer button.btn-save-order');
     if (create && !create.disabled && normalizedText(create) === 'Tạo đơn') create.click();
@@ -304,17 +383,15 @@
     if (!label || normalizedText(label) !== 'Miễn phí giao hàng' || !label.closest('.crm-platform')) return;
     if (!input.checked) {
       noteRunId++;
+      priceRunId++;
       autoSubmitRunId++;
       return;
     }
-    if (!autoPrintNote) return;
     const id = ++noteRunId;
+    const priceId = ++priceRunId;
     const submitId = ++autoSubmitRunId;
     const conversationId = selectedConversationId();
-    setTimeout(() => {
-      if (autoPrintNote && !recording && id === noteRunId)
-        fillPrintNote(id, submitId, conversationId);
-    }, 80);
+    if (autoPrintNote || autoMienSamPrice) handleFreeShipping(id, submitId, priceId, conversationId);
   }, true);
 
   document.addEventListener('click', (event) => {
@@ -335,6 +412,7 @@
     }
     if (conversationRow(event.target)) {
       noteRunId++;
+      priceRunId++;
       autoSubmitRunId++;
       tagRunId++;
     }
