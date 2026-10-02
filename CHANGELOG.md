@@ -1,5 +1,16 @@
 # Lịch sử phát triển
 
+## 0.4.1 — 03/10/2026
+
+- Đọc sản phẩm của đơn “Nhiều sản phẩm” từ bảng nổi khi rê chuột, không mở cửa sổ chi tiết từng đơn.
+- Giảm thời gian chờ cuộn bảng và cập nhật tiến độ theo mỗi 10 đơn để quét nhanh hơn.
+
+## 0.4.0 — 03/10/2026
+
+- Chia popup thành hai mục **Pancake** và **POS Cake**, giữ nguyên năm công tắc Pancake.
+- Thêm chức năng phân nhóm đơn POS theo thành phần đóng gói và số kg từng loại; đọc chi tiết những đơn hiện “Nhiều sản phẩm”.
+- Hiển thị mã đơn theo nhóm, chọn nhóm để in, rồi gọi chức năng in hàng loạt gốc của POS. Bỏ qua đơn không đọc đủ và chặn in khi quét thiếu đơn so với bộ lọc.
+
 ## 0.3.0 — 27/09/2026
 
 - Thêm công tắc **Tự điều chỉnh giá Miến Sâm**. Sau khi người dùng tích Miễn phí giao hàng, cộng kg theo tên và số lượng của toàn bộ sản phẩm Miến Sâm, đối chiếu mốc 1–6kg và 10kg, rồi điền chênh lệch vào Giảm giá nếu tổng tiền cao hơn bảng giá.

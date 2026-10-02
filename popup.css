@@ -16,3 +16,8 @@ h1 { margin: 0; font-size: 17px; }
 .diagnostics button { border: 1px solid #c6d3e3; border-radius: 5px; background: #fff; padding: 6px 9px; margin: 0 5px 8px 0; cursor: pointer; }
 .diagnostics button:disabled { opacity: .45; cursor: default; }
 .diagnostics small { display: block; color: #607086; }
+.sections { display: flex; gap: 6px; margin: 0 0 18px; border-bottom: 1px solid #dce3eb; }
+.sections button { flex: 1; border: 0; border-bottom: 2px solid transparent; background: transparent; padding: 9px 3px; color: #607086; font: 600 13px Arial, sans-serif; cursor: pointer; }
+.sections button.active { color: #175cd3; border-bottom-color: #175cd3; }
+[hidden] { display: none !important; }
+.pos-hint { color: #607086; font-size: 12px; line-height: 1.5; }

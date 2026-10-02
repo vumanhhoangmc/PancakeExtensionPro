@@ -2,20 +2,24 @@
 
 **Mô tả trên Chrome:** DEV: Bố Hoàng No1
 
-Extension Chrome hỗ trợ lên đơn trên trang Hội thoại `https://pancake.vn/multi_pages`. Dự án dùng Manifest V3, JavaScript thuần và CSS; không cần cài thư viện hay chạy bước build.
+Extension Chrome hỗ trợ lên đơn trên trang Hội thoại `https://pancake.vn/multi_pages` và phân nhóm đơn để in trên POS Cake `https://pos.pancake.vn/shop/.../order`. Dự án dùng Manifest V3, JavaScript thuần và CSS; không cần cài thư viện hay chạy bước build.
 
 ## Cài trên máy khác
 
 1. Sao chép **toàn bộ thư mục dự án** sang máy mới, giữ nguyên các file cùng cấp với `manifest.json`.
 2. Mở Chrome tại `chrome://extensions`, bật **Chế độ dành cho nhà phát triển**.
 3. Bấm **Tải tiện ích đã giải nén** và chọn thư mục chứa `manifest.json`.
-4. Mở hoặc tải lại tab `https://pancake.vn/multi_pages`, đăng nhập Pancake bằng tài khoản của bạn, rồi mở popup **Pancake Assistant Pro** để chọn các công tắc.
+4. Mở hoặc tải lại tab Pancake và POS Cake, đăng nhập bằng tài khoản của bạn, rồi mở popup **Pancake Assistant Pro** để chọn các công tắc.
 
-Sau khi chỉnh mã, bấm nút tải lại của extension tại `chrome://extensions`, rồi tải lại tab Pancake. Các công tắc được lưu bằng `chrome.storage.local` theo từng hồ sơ Chrome; sao chép thư mục **không** mang theo trạng thái công tắc hay phiên đăng nhập. Không cần và không nên chép cookie vào dự án.
+Sau khi chỉnh mã, bấm nút tải lại của extension tại `chrome://extensions`, rồi tải lại các tab Pancake/POS Cake đang dùng. Các công tắc được lưu bằng `chrome.storage.local` theo từng hồ sơ Chrome; sao chép thư mục **không** mang theo trạng thái công tắc hay phiên đăng nhập. Không cần và không nên chép cookie vào dự án.
 
 Nếu chuyển bằng Git thay vì sao chép thư mục, hãy commit và đẩy các file dự án trước khi clone ở máy mới. Repository tại thời điểm viết tài liệu **chưa có commit**, nên clone trực tiếp sẽ chưa mang theo mã nguồn.
 
-## Các công tắc
+## Giao diện hai mục
+
+Popup có mục **Pancake** cho năm tính năng lên đơn hiện có và mục **POS Cake** cho tính năng phân nhóm đơn để in. Khi mở popup trên trang Đơn hàng POS, mục POS Cake được chọn sẵn.
+
+## Các công tắc Pancake
 
 | Công tắc | Mặc định | Hoạt động |
 | --- | --- | --- |
@@ -26,6 +30,17 @@ Nếu chuyển bằng Git thay vì sao chép thư mục, hãy commit và đẩy 
 | Chuẩn hóa tag sau tạo đơn | Tắt | Sau lần bấm **Tạo đơn** tự động hoặc thủ công, đợi Pancake xác nhận có đơn mới, rồi chỉ giữ **Đã Lên Đơn** và **Đã Gửi**. |
 
 Extension **không tự tích Miễn phí giao hàng**. Khi **Tự tạo đơn** tắt, bạn tự xem lại, lưu ghi chú và tạo đơn. Khi **Chuẩn hóa tag** tắt, extension không sửa tag.
+
+## Phân nhóm đơn trên POS Cake
+
+1. Trên trang **Đơn hàng** của POS Cake, đặt bộ lọc đơn cần in (ví dụ **Chưa in**).
+2. Trong popup, mở mục **POS Cake** và bật **Phân nhóm đơn để in**.
+3. Bấm nút **Phân nhóm đơn** ở góc dưới phải của trang POS, rồi bấm **Quét và phân nhóm**. Extension cuộn danh sách trong bộ lọc hiện tại; với đơn có “Nhiều sản phẩm”, nó đọc bảng nổi chứa đầy đủ tên và số lượng như khi rê chuột vào ô này. Không cần mở cửa sổ chi tiết từng đơn nên quét nhanh hơn. Quá trình này chỉ đọc đơn, không lưu hay đổi trạng thái.
+4. Chọn một nhóm, kiểm tra mã đơn, rồi bấm **In nhóm bằng POS**. Extension dùng chức năng in hàng loạt của POS để in **phiếu gốc của từng đơn** trong nhóm. Lặp lại cho các nhóm khác. POS có thể mở bước xác nhận hoặc hộp thoại máy in theo cấu hình in của bạn.
+
+Nhóm được xác định theo **thành phần đóng gói**: khối lượng trong tên sản phẩm nhân với số lượng, tách riêng sợi nhỏ, sợi to và các sản phẩm khác. Chẳng hạn `2KG Miến Sâm Sợi To x 1` và `1KG Miến Sâm Sợi To x 2` cùng nhóm **2kg miến sâm to**; đơn gồm **2kg miến sâm nhỏ + 1kg miến sâm to** thành nhóm riêng. Tên `Miến Sợi Nhỏ/To` trên POS được hiểu là Miến Sâm tương ứng. Sản phẩm không có `kg/g` được gom theo tên và số lượng.
+
+Extension không in đơn có dữ liệu sản phẩm thiếu hoặc không đọc đủ. Nếu số đơn quét được khác tổng số đơn POS báo trong bộ lọc, tính năng yêu cầu quét lại. Hãy bỏ chọn những đơn đã chọn thủ công trên POS trước khi quét. Sau khi thay bộ lọc, quét lại để có nhóm mới.
 
 ### Bảng giá Miến Sâm
 
@@ -52,7 +67,7 @@ Extension lấy quy cách từ **tên sản phẩm**, không lấy dòng khối 
 
 ## Kiểm tra nhanh
 
-Chạy `node --test product-summary.test.js pricing.test.js` để kiểm tra phép tính khối lượng và bảng giá. Có thể chạy `node --check content.js` và `node --check popup.js` để kiểm tra cú pháp. Kiểm thử luồng tạo đơn và tag trên một hội thoại thử nghiệm; nút **Tạo đơn** có tác dụng thật trên Pancake.
+Chạy `node --test product-summary.test.js pricing.test.js pos-groups.test.js` để kiểm tra phép tính khối lượng, bảng giá và gom nhóm. Có thể chạy `node --check content.js`, `node --check pos-content.js` và `node --check popup.js` để kiểm tra cú pháp. Kiểm thử luồng tạo đơn và tag trên một hội thoại thử nghiệm; nút **Tạo đơn** có tác dụng thật trên Pancake.
 
 ## Dành cho người phát triển hoặc AI tiếp theo
 

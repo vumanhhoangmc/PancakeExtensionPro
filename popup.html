@@ -10,6 +10,11 @@
     <main>
       <h1>Pancake Assistant Pro</h1>
       <p class="byline">By Bố Hoàng No1</p>
+      <nav class="sections" role="tablist" aria-label="Nhóm tính năng">
+        <button id="tab-pancake" type="button" role="tab" aria-controls="pane-pancake" class="active" aria-selected="true">Pancake</button>
+        <button id="tab-poscake" type="button" role="tab" aria-controls="pane-poscake" aria-selected="false">POS Cake</button>
+      </nav>
+      <section id="pane-pancake" role="tabpanel" aria-labelledby="tab-pancake">
       <label class="feature">
         <span>
           <strong>Hỗ trợ lên đơn</strong>
@@ -51,6 +56,17 @@
         <button id="record-ui" type="button">Bắt đầu ghi nhận</button>
         <button id="copy-ui" type="button" disabled>Sao chép kết quả</button>
         <small id="record-status"></small>
+      </section>
+      </section>
+      <section id="pane-poscake" role="tabpanel" aria-labelledby="tab-poscake" hidden>
+        <label class="feature">
+          <span>
+            <strong>Phân nhóm đơn để in</strong>
+            <small>Quét đơn trong bộ lọc POS hiện tại, gom theo sản phẩm và số kg từng loại. Chọn từng nhóm để in phiếu đơn gốc của POS.</small>
+          </span>
+          <input id="pos-group-print" type="checkbox" aria-label="Bật phân nhóm đơn POS Cake">
+        </label>
+        <p class="pos-hint">Sau khi bật, mở trang Đơn hàng của POS Cake và bấm “Phân nhóm đơn” ở góc dưới bên phải.</p>
       </section>
       <p id="site-status" role="status"></p>
     </main>

@@ -3,6 +3,11 @@ const noteToggle = document.getElementById('auto-print-note');
 const priceToggle = document.getElementById('auto-mien-sam-price');
 const submitToggle = document.getElementById('auto-submit-order');
 const tagsToggle = document.getElementById('auto-order-tags');
+const posToggle = document.getElementById('pos-group-print');
+const pancakeTab = document.getElementById('tab-pancake');
+const posTab = document.getElementById('tab-poscake');
+const pancakePane = document.getElementById('pane-pancake');
+const posPane = document.getElementById('pane-poscake');
 const status = document.getElementById('site-status');
 const recordButton = document.getElementById('record-ui');
 const copyButton = document.getElementById('copy-ui');
@@ -26,6 +31,9 @@ chrome.storage.local.get({ autoOrder: true, autoPrintNote: true, autoMienSamPric
   tagsToggle.checked = autoOrderTags;
 });
 chrome.storage.local.get({ uiRecording: false, uiEvents: [] }, updateRecordStatus);
+chrome.storage.local.get({ posGroupPrint: false }, ({ posGroupPrint }) => {
+  posToggle.checked = posGroupPrint;
+});
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
@@ -34,6 +42,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes.autoMienSamPrice) priceToggle.checked = changes.autoMienSamPrice.newValue;
   if (changes.autoSubmitOrder) submitToggle.checked = changes.autoSubmitOrder.newValue;
   if (changes.autoOrderTags) tagsToggle.checked = changes.autoOrderTags.newValue;
+  if (changes.posGroupPrint) posToggle.checked = changes.posGroupPrint.newValue;
   if (changes.uiRecording || changes.uiEvents) {
     chrome.storage.local.get({ uiRecording: false, uiEvents: [] }, updateRecordStatus);
   }
@@ -59,6 +68,22 @@ tagsToggle.addEventListener('change', () => {
   chrome.storage.local.set({ autoOrderTags: tagsToggle.checked });
 });
 
+posToggle.addEventListener('change', () => {
+  chrome.storage.local.set({ posGroupPrint: posToggle.checked });
+});
+
+function showPane(pos) {
+  pancakePane.hidden = pos;
+  posPane.hidden = !pos;
+  pancakeTab.classList.toggle('active', !pos);
+  posTab.classList.toggle('active', pos);
+  pancakeTab.setAttribute('aria-selected', String(!pos));
+  posTab.setAttribute('aria-selected', String(pos));
+}
+
+pancakeTab.addEventListener('click', () => showPane(false));
+posTab.addEventListener('click', () => showPane(true));
+
 recordButton.addEventListener('click', () => {
   chrome.storage.local.get({ uiRecording: false }, ({ uiRecording }) => {
     if (uiRecording) {
@@ -77,7 +102,9 @@ copyButton.addEventListener('click', async () => {
 
 chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
   const isPancake = /^https:\/\/(?:[^/]+\.)?pancake\.vn\/multi_pages(?:[/?#]|$)/.test(tab?.url || '');
-  status.textContent = isPancake
-    ? 'Đang hoạt động trên trang Hội thoại.'
-    : 'Mở trang Hội thoại của Pancake để sử dụng.';
+  const isPos = /^https:\/\/pos\.pancake\.vn\/shop\/[^/]+\/order(?:[/?#]|$)/.test(tab?.url || '');
+  if (isPos) showPane(true);
+  status.textContent = isPancake ? 'Đang hoạt động trên trang Hội thoại.'
+    : isPos ? 'Đang hoạt động trên trang Đơn hàng POS Cake.'
+      : 'Mở Hội thoại Pancake hoặc Đơn hàng POS Cake để sử dụng.';
 });

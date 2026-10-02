@@ -1,0 +1,11 @@
+#pap-pos-launcher { position: fixed; z-index: 2147483646; right: 20px; bottom: 20px; border: 0; border-radius: 8px; background: #175cd3; color: white; font: 600 14px Arial, sans-serif; padding: 11px 16px; cursor: pointer; box-shadow: 0 4px 16px #0003; }
+#pap-pos-panel { position: fixed; z-index: 2147483647; top: 12px; right: 12px; bottom: 12px; width: min(420px, calc(100vw - 24px)); box-sizing: border-box; overflow: auto; background: white; color: #1c2b3d; border: 1px solid #dce3eb; border-radius: 10px; box-shadow: 0 8px 32px #0004; padding: 16px; font: 13px/1.5 Arial, sans-serif; }
+#pap-pos-panel[hidden] { display: none; }
+#pap-pos-panel header { display: flex; align-items: center; justify-content: space-between; font-size: 16px; }
+#pap-pos-panel button { border: 1px solid #c6d3e3; border-radius: 5px; background: #fff; color: #175cd3; cursor: pointer; padding: 6px 9px; margin: 4px 6px 4px 0; font: inherit; }
+#pap-pos-panel #pap-pos-close { border: 0; font-size: 24px; line-height: 1; }
+#pap-pos-panel #pap-pos-scan { background: #175cd3; color: white; border-color: #175cd3; }
+#pap-pos-panel #pap-pos-status { color: #475467; }
+#pap-pos-panel .pap-pos-group { border-top: 1px solid #eaecf0; padding: 11px 0; }
+#pap-pos-panel .pap-pos-group strong, #pap-pos-panel .pap-pos-group small { display: block; }
+#pap-pos-panel .pap-pos-group small { margin: 4px 0; color: #667085; }

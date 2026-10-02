@@ -1,18 +1,20 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 27/09/2026. Phiên bản manifest: `0.3.0`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại của Pancake. Mục tiêu là giảm thao tác lên đơn, với **mỗi tính năng có công tắc bật/tắt riêng**. Trang đích là `https://pancake.vn/multi_pages`; logic trong `content.js` còn kiểm tra đường dẫn `/multi_pages` trước khi thao tác. Không có backend, build tool, API key hay cookie trong dự án.
+Cập nhật: 03/10/2026. Phiên bản manifest: `0.4.1`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Không có backend, build tool, API key hay cookie trong dự án.
 
 ## Cấu trúc dự án
 
 | File | Vai trò |
 | --- | --- |
 | `manifest.json` | Tên, mô tả, quyền, khai báo content scripts và popup. Nạp `product-summary.js`, `pricing.js` trước `content.js`. |
-| `popup.html`, `popup.css`, `popup.js` | Giao diện năm công tắc và chế độ ghi nhận cấu trúc phần tử. Lưu lựa chọn vào `chrome.storage.local`. |
+| `popup.html`, `popup.css`, `popup.js` | Popup hai mục Pancake/POS Cake. Giữ năm công tắc Pancake, thêm công tắc POS; lưu lựa chọn vào `chrome.storage.local`. |
 | `content.js` | Nghe sự kiện trên trang, tự động mở form, điền ghi chú, tùy chọn tạo đơn và chuẩn hóa tag. |
 | `product-summary.js` | Hàm thuần `summarizeProducts(products)`; chạy trong content script và cũng xuất CommonJS để thử bằng Node. |
 | `product-summary.test.js` | Kiểm tra phép nhân quy cách với số lượng, gộp sản phẩm cùng loại và xử lý dữ liệu thiếu. |
 | `pricing.js` | Hàm thuần `calculateDiscount(products, orderTotal)`; bảng giá Miến Sâm và điều kiện áp dụng. |
 | `pricing.test.js` | Kiểm tra giá 1–6kg và 10kg, đơn lẫn sản phẩm khác, mốc không hỗ trợ, mức giảm. |
+| `pos-groups.js`, `pos-groups.test.js` | Hàm thuần gom đơn theo thành phần sản phẩm và tổng kg từng loại. |
+| `pos-content.js`, `pos-content.css` | Nút nổi và bảng phân nhóm trên trang Đơn hàng POS; quét DOM, chọn nhóm và gọi nút in hàng loạt gốc của POS. |
 | `README.md` | Hướng dẫn cài đặt, sử dụng và chuyển sang máy khác. |
 | `AGENTS.md` | Điểm bắt đầu ngắn gọn cho AI tiếp quản dự án. |
 
@@ -20,7 +22,7 @@ Không cần `npm install`. Node chỉ cần để chạy bài kiểm tra; Chrom
 
 ## Thiết lập và di chuyển
 
-Sao chép cả thư mục chứa `manifest.json`, dùng **Tải tiện ích đã giải nén** tại `chrome://extensions`, rồi tải lại trang Pancake. Sau mỗi lần sửa file extension, phải tải lại extension **và** tab Pancake vì content script cũ vẫn nằm trong tab chưa tải lại. `chrome.storage.local` thuộc hồ sơ Chrome, không nằm trong thư mục dự án; công tắc trên máy mới trở về mặc định. Pancake cần được đăng nhập riêng trên máy mới. Không chuyển cookie cho AI hoặc lưu cookie vào mã nguồn.
+Sao chép cả thư mục chứa `manifest.json`, dùng **Tải tiện ích đã giải nén** tại `chrome://extensions`, rồi tải lại các tab Pancake/POS Cake. Sau mỗi lần sửa file extension, phải tải lại extension **và** tab đang dùng vì content script cũ vẫn nằm trong tab chưa tải lại. `chrome.storage.local` thuộc hồ sơ Chrome, không nằm trong thư mục dự án; công tắc trên máy mới trở về mặc định. Pancake/POS Cake cần được đăng nhập riêng trên máy mới. Không chuyển cookie cho AI hoặc lưu cookie vào mã nguồn.
 
 Repository hiện chưa có commit. Nếu dùng Git để chuyển máy, cần commit/push toàn bộ các file trước; nếu không, chỉ việc sao chép nguyên thư mục dự án.
 
@@ -35,6 +37,7 @@ Manifest hiện yêu cầu `storage`, `activeTab` và quyền truy cập `pancak
 | `autoMienSamPrice` | `false` | Khi người dùng tích Miễn phí giao hàng → điều chỉnh Giảm giá cho đơn chỉ có Miến Sâm nếu tổng tiền vượt giá mốc. Hoạt động độc lập với ghi chú. |
 | `autoSubmitOrder` | `false` | Sau khi ghi chú đã điền, lưu ghi chú rồi bấm Tạo đơn. Chỉ có tác dụng khi `autoPrintNote` bật. |
 | `autoOrderTags` | `false` | Sau khi đơn mới được xác nhận, chỉ giữ Đã Lên Đơn và Đã Gửi. Áp dụng cho cả nút Tạo đơn bấm tay. |
+| `posGroupPrint` | `false` | Bật nút Phân nhóm đơn trên trang Đơn hàng POS Cake. |
 | `uiRecording` | `false` | Chế độ chẩn đoán ghi nhận 4 lần bấm; ngăn các luồng tự động đang chạy. |
 | `uiEvents` | `[]` | Dữ liệu chẩn đoán gồm tag HTML, class, role, placeholder và vị trí. Không chứa nội dung chat hay cookie. |
 
@@ -62,6 +65,14 @@ Trình nghe `click` bắt nút `.crm-platform .box-footer button.btn-save-order`
 
 Tag được chọn có phần tử con `.ellipse` trong `button.btn-tag-item`. Tên tag được chuẩn hóa khoảng trắng trước khi so khớp. Hai tag cần giữ được tích **trước** khi bỏ các tag khác; nếu không tích được một trong hai, extension dừng việc bỏ tag cũ.
 
+### 5. Phân nhóm và in đơn POS Cake
+
+Content script POS chỉ chạy ở `/shop/{id}/order`. Công tắc `posGroupPrint` (mặc định tắt) bật nút **Phân nhóm đơn** trên trang. Người dùng đặt bộ lọc POS trước, rồi bấm **Quét và phân nhóm**. `pos-content.js` cuộn `.ant-table-tbody-virtual-holder`, đọc các `.ant-table-row[data-row-key]` và mã đơn trong `.order-id-column a`. Cột sản phẩm là ô thứ 10 của mỗi dòng (chỉ số 9), đã đối chiếu với header **Sản phẩm** trên POS ngày 03/10/2026. Dòng một sản phẩm hiển thị `Tên x Số lượng`; dòng nhiều sản phẩm chỉ hiển thị `Nhiều sản phẩm`. Script phát sự kiện rê chuột lên ô này, đọc từng `.ant-menu-title-content` trong bảng nổi `.order-action-list:not(.ant-popover-hidden)` rồi rời ô. Mỗi dòng phải khớp mẫu `Tên x Số lượng` của `parseListProduct()`; nếu bảng nổi không hiện hoặc có dòng không hợp lệ trong 700 ms, đơn vào mục cần xem lại. Không mở modal chi tiết. Giữa hai vị trí cuộn chỉ chờ 60 ms; trạng thái tiến độ cập nhật mỗi 10 đơn. Không đọc cookie hoặc API nội bộ.
+
+`pos-groups.js` chuẩn hóa tiền tố năm, gom `Miến Sợi Nhỏ/To` cùng biến thể `Miến Sâm Sợi Nhỏ/To`, nhân quy cách `kg/g` với số lượng và tạo khóa nhóm không phụ thuộc thứ tự sản phẩm. Sản phẩm không có quy cách được gom theo tên và số lượng. Bảng kết quả hiện thành phần, số đơn và mã đơn. Script đối chiếu số đơn đã quét với số ở trạng thái POS đang chọn; nếu thiếu, không cho in từ kết quả chưa đủ. Đơn thiếu tên/số lượng được liệt kê ở mục cần xem lại.
+
+Người dùng bấm **Chọn nhóm để in** để tích các checkbox POS của đúng nhóm, kể cả các dòng ngoài vùng render hiện tại. Script từ chối khi POS đang có đơn được chọn ngoài nhóm và xác nhận `Đã chọn: N` bằng số đơn của nhóm. Nút **In nhóm bằng POS** bấm nút in hàng loạt gốc trong `.action-btn-container .ant-space-compact` (nhận dạng biểu tượng máy in), để POS in phiếu đơn từng đơn theo cấu hình sẵn. Không tự in khi vừa quét. Sau khi đổi bộ lọc phải quét lại. Khi thử mã, không bấm nút in trên đơn thật chỉ để xem kết quả.
+
 ## Bộ chọn DOM đã xác nhận trên Pancake
 
 Những bộ chọn sau được đọc từ trang Pancake đang đăng nhập trong Chrome ngày 26/09/2026. Chúng phụ thuộc giao diện của Pancake và có thể cần sửa khi Pancake cập nhật.
@@ -85,6 +96,8 @@ Những bộ chọn sau được đọc từ trang Pancake đang đăng nhập t
 | Danh sách đơn gần đây | `.crm-platform .recent-orders .ant-collapse-header` chứa ID số của đơn |
 | Bảng tag | `button.btn-tag-item`; có `.ellipse` nghĩa là đang tích |
 
+Các bộ chọn POS đã đọc trên trang đăng nhập ngày 03/10/2026: `.ant-table-tbody-virtual-holder`, `.ant-table-row[data-row-key]`, `.order-id-column a`, `.order-action-list`, `.ant-menu-title-content`, `.action-btn-container .ant-space-compact button`. POS dùng bảng ảo nên DOM chỉ chứa các dòng đang trong vùng cuộn; tuyệt đối không giả định `querySelectorAll('.ant-table-row')` là toàn bộ bộ lọc.
+
 **Lỗi từng gặp:** bản đầu dùng ngưỡng tọa độ màn hình để đoán dòng hội thoại và tab Tạo mới. Giao diện thực tế nằm cao hơn ngưỡng nên không chạy; đã đổi sang class thật. Bản đầu của tính năng tag tìm nút Tạo đơn bên trong `.view-order` và chỉ chờ tin nhắn chat mới. Nút thật nằm ở `.box-footer`, còn đơn mới thường xuất hiện trong `.recent-orders` mà không gửi tin chat; cả hai đã được sửa. Không quay lại hai giả định này.
 
 ## Kiểm tra và phát triển tiếp
@@ -96,6 +109,8 @@ node --check content.js
 node --check popup.js
 node --test product-summary.test.js
 node --test pricing.test.js
+node --check pos-content.js
+node --test pos-groups.test.js
 ```
 
 Sau đó tải lại extension và tab Pancake, thử lần lượt các công tắc trên hội thoại thử nghiệm. Với tính năng tag, quan sát trước/sau ở dải tag: cuối cùng chỉ còn hai dấu `.ellipse` trên **Đã Lên Đơn** và **Đã Gửi**. Đừng bấm **Tạo đơn** trên đơn thật chỉ để thử bộ chọn; thao tác này tạo đơn thật. Có thể dùng chế độ **Kiểm tra giao diện** ở popup để ghi lại cấu trúc bốn phần tử khi Pancake đổi DOM.
