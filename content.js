@@ -60,6 +60,7 @@
     if (changes.uiRecording) {
       recording = changes.uiRecording.newValue;
       if (recording) {
+        runId++;
         noteRunId++;
         priceRunId++;
         autoSubmitRunId++;
@@ -97,7 +98,11 @@
   };
 
   const normalizedText = (element) => (element.textContent || '').replace(/\s+/g, ' ').trim();
-  const selectedConversationId = () => document.querySelector('.conversation-list-item.selected')?.id;
+  const selectedConversationId = () => {
+    const row = document.querySelector('.conversation-list-item.selected');
+    // Pancake no longer gives conversation rows an id; retain the DOM node as a safe identity.
+    return row?.id || row || null;
+  };
 
   function conversationRow(target) {
     if (target.closest('button, input, textarea, select, [contenteditable="true"]')) return null;
@@ -105,14 +110,40 @@
     return row && visible(row) ? row : null;
   }
 
-  async function waitFor(find, id, timeoutMs = 3000) {
-    const until = Date.now() + timeoutMs;
-    while (enabled && id === runId && Date.now() < until) {
-      const result = find();
-      if (result) return result;
-      await new Promise((resolve) => setTimeout(resolve, 80));
-    }
-    return null;
+  function waitForDom(find, current, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      let observer, timeout, cancellation;
+      let finished = false;
+      const finish = (result, error) => {
+        if (finished) return;
+        finished = true;
+        observer?.disconnect();
+        clearTimeout(timeout);
+        clearInterval(cancellation);
+        if (error) reject(error);
+        else resolve(result);
+      };
+      const check = () => {
+        try {
+          if (!current()) return finish(null);
+          const result = find();
+          if (result) finish(result);
+        } catch (error) {
+          finish(null, error);
+        }
+      };
+      check();
+      if (finished) return;
+      observer = new MutationObserver(check);
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
+      timeout = setTimeout(() => finish(null), timeoutMs);
+      // Native input properties and switch cancellation may not produce a DOM mutation.
+      cancellation = setInterval(check, 80);
+    });
+  }
+
+  function waitFor(find, id, timeoutMs = 3000) {
+    return waitForDom(find, () => enabled && !recording && id === runId, timeoutMs);
   }
 
   function createTab() {
@@ -129,29 +160,38 @@
     if (!visible(input)) return null;
     const field = input.getBoundingClientRect();
     const controlledList = document.getElementById(input.getAttribute('aria-controls') || '');
-    const listboxes = [...document.querySelectorAll('[role="listbox"]')];
-    const roots = controlledList?.querySelector('[role="option"]') ? [controlledList] : listboxes;
-    const options = roots.flatMap((root) => [...root.querySelectorAll('[role="option"]')]);
-    return options.filter((option) => {
-      if (!visible(option)) return false;
+    const roots = controlledList?.querySelector('[role="option"]')
+      ? [controlledList] : document.querySelectorAll('[role="listbox"]');
+    for (const root of roots) for (const option of root.querySelectorAll('[role="option"]')) {
+      if (!visible(option)) continue;
       const rect = option.getBoundingClientRect();
-      return rect.top >= field.bottom - 3 && rect.top <= field.bottom + 80 &&
+      if (rect.top >= field.bottom - 3 && rect.top <= field.bottom + 80 &&
         rect.right >= field.left - 100 && rect.left <= field.right &&
-        normalizedText(option).length > 0;
-    }).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0] || null;
+        normalizedText(option).length > 0) return option;
+    }
+    return null;
   }
 
   async function prepareOrder(id) {
-    const tab = await waitFor(createTab, id);
-    if (!tab || id !== runId) return;
-    tab.click();
+    for (let attempt = 0; attempt < 2 && enabled && !recording && id === runId; attempt++) {
+      const tab = await waitFor(createTab, id);
+      if (!tab || id !== runId) return;
+      tab.click();
 
-    const input = await waitFor(addressInput, id);
-    if (!input || id !== runId) return;
-    input.click();
+      const input = await waitFor(addressInput, id);
+      if (!input || id !== runId) return;
+      input.click();
 
-    const suggestion = await waitFor(() => firstAddressSuggestion(input), id, 3500);
-    if (suggestion && id === runId && enabled) suggestion.click();
+      const suggestion = await waitFor(() => firstAddressSuggestion(input), id, 3500);
+      if (suggestion && id === runId && enabled && !recording) suggestion.click();
+
+      // Pancake may finish loading the conversation after our first click and restore Thông tin.
+      const reverted = await waitForDom(() => {
+        const activeTab = document.querySelector('.crm-platform .tab-label-item.active');
+        return activeTab && normalizedText(activeTab) !== 'Tạo mới';
+      }, () => enabled && !recording && id === runId, 500);
+      if (!reverted) return;
+    }
   }
 
   function orderProducts() {
@@ -163,14 +203,8 @@
       }));
   }
 
-  async function waitForNote(find, id, timeoutMs = 2000) {
-    const until = Date.now() + timeoutMs;
-    while (autoPrintNote && !recording && id === noteRunId && Date.now() < until) {
-      const result = find();
-      if (result) return result;
-      await new Promise((resolve) => setTimeout(resolve, 80));
-    }
-    return null;
+  function waitForNote(find, id, timeoutMs = 2000) {
+    return waitForDom(find, () => autoPrintNote && !recording && id === noteRunId, timeoutMs);
   }
 
   function noteWithSummary(existing, summary, previous) {
@@ -183,12 +217,15 @@
   }
 
   async function fillPrintNote(id, submitId, conversationId, priceReady) {
+    const current = () => autoPrintNote && !recording && id === noteRunId && conversationId &&
+      selectedConversationId() === conversationId && freeShippingInput()?.checked;
+    if (!current()) return;
     const products = orderProducts();
     const summary = globalThis.PancakeProductSummary?.summarizeProducts(products);
     if (!summary || id !== noteRunId) return;
 
     const section = await waitForNote(() => document.querySelector('.crm-platform .note-print-order'), id);
-    if (!section) return;
+    if (!section || !current()) return;
     if (!section.querySelector('textarea')) {
       const addNote = [...section.querySelectorAll('*')]
         .find((element) => element.children.length === 0 && normalizedText(element) === 'Thêm ghi chú');
@@ -197,7 +234,7 @@
     }
 
     const textarea = await waitForNote(() => section.querySelector('textarea'), id);
-    if (!textarea || id !== noteRunId) return;
+    if (!textarea || !current() || JSON.stringify(orderProducts()) !== JSON.stringify(products)) return;
     const next = noteWithSummary(textarea.value.trim(), summary, generatedNotes.get(textarea));
     if (next !== textarea.value) {
       const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
@@ -270,24 +307,21 @@
       field.blur();
     }
 
-    const until = Date.now() + 2000;
-    while (sameOrder() && Date.now() < until) {
+    return Boolean(await waitForDom(() => {
       const finalTotal = money(document.querySelector('.crm-platform .box-footer .text-final-price')?.textContent);
-      if (money(discountField()?.value) === price.discount && finalTotal === price.targetTotal) return true;
-      await pause(80);
-    }
-    return false;
+      return money(discountField()?.value) === price.discount && finalTotal === price.targetTotal;
+    }, sameOrder, 2000));
   }
 
   async function handleFreeShipping(noteId, submitId, priceId, conversationId) {
-    await pause(80);
+    await pause(0); // Let Pancake finish handling the checkbox event.
     const priceReady = !autoMienSamPrice || await adjustMienSamPrice(priceId, conversationId);
     if (autoPrintNote && !recording && noteId === noteRunId && freeShippingInput()?.checked)
       await fillPrintNote(noteId, submitId, conversationId, priceReady);
   }
 
   async function submitAfterNote(section, noteId, submitId, conversationId, summary) {
-    await pause(80); // Allow Pancake's controlled textarea to receive the input event.
+    await pause(0); // Allow Pancake's controlled textarea to receive the input event.
     const current = () => autoSubmitOrder && autoPrintNote && !recording &&
       noteId === noteRunId && submitId === autoSubmitRunId &&
       conversationId && selectedConversationId() === conversationId && freeShippingInput()?.checked;
@@ -297,9 +331,8 @@
     if (!save || normalizedText(save) !== 'Lưu') return;
     save.click();
 
-    const until = Date.now() + 5000;
-    while (current() && Date.now() < until && section.querySelector('textarea')) await pause(100);
-    if (!current() || section.querySelector('textarea')) return;
+    const saved = await waitForDom(() => section.isConnected && !section.querySelector('textarea'), current, 5000);
+    if (!saved || !current()) return;
     if (globalThis.PancakeProductSummary?.summarizeProducts(orderProducts()) !== summary) return;
     if (!priceVerifiedForCurrentOrder()) return;
 
@@ -343,13 +376,10 @@
     if (!tag) return false;
     if (Boolean(tag.querySelector('.ellipse')) === desired) return true;
     tag.click();
-    const until = Date.now() + 2000;
-    while (current() && Date.now() < until) {
+    return Boolean(await waitForDom(() => {
       const updated = findTag(name);
-      if (updated && Boolean(updated.querySelector('.ellipse')) === desired) return true;
-      await pause(80);
-    }
-    return false;
+      return updated && Boolean(updated.querySelector('.ellipse')) === desired;
+    }, current, 2000));
   }
 
   async function normalizeOrderTags(id, conversationId) {
@@ -364,15 +394,10 @@
   }
 
   async function watchCreatedOrder(id, conversationId, beforeIds, beforeNotices) {
-    const until = Date.now() + 30000;
-    while (autoOrderTags && !recording && id === tagRunId &&
-      selectedConversationId() === conversationId && Date.now() < until) {
-      if (orderCreated(beforeIds, beforeNotices)) {
-        await normalizeOrderTags(id, conversationId);
-        return;
-      }
-      await pause(180);
-    }
+    const current = () => autoOrderTags && !recording && id === tagRunId &&
+      conversationId && selectedConversationId() === conversationId;
+    const created = await waitForDom(() => orderCreated(beforeIds, beforeNotices), current, 30000);
+    if (created && current()) await normalizeOrderTags(id, conversationId);
   }
 
   document.addEventListener('change', (event) => {
@@ -400,8 +425,11 @@
       recordClick(event.target);
       return;
     }
+    // Give deliberate user input priority over an opener/address selection still in progress.
+    if (event.isTrusted && event.target.closest('.crm-platform, .ant-select-dropdown')) runId++;
     const create = event.target.closest('button.btn-save-order');
     if (create && create.closest('.crm-platform .box-footer')) {
+      runId++; // Creating an order also cancels a pending opener retry.
       autoSubmitRunId++; // A click on Tạo đơn cancels any other pending automatic click.
       if (autoOrderTags) {
         const id = ++tagRunId;
@@ -410,14 +438,15 @@
       }
       return;
     }
-    if (conversationRow(event.target)) {
+    const row = conversationRow(event.target);
+    if (row) {
       noteRunId++;
       priceRunId++;
       autoSubmitRunId++;
       tagRunId++;
     }
     if (!enabled) return;
-    if (!conversationRow(event.target)) return;
+    if (!row) return;
     const id = ++runId;
     // Let Pancake finish switching the active conversation before opening its form.
     setTimeout(() => {

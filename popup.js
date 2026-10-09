@@ -4,6 +4,8 @@ const priceToggle = document.getElementById('auto-mien-sam-price');
 const submitToggle = document.getElementById('auto-submit-order');
 const tagsToggle = document.getElementById('auto-order-tags');
 const posToggle = document.getElementById('pos-group-print');
+const aiBetaToggle = document.getElementById('ai-auto-order-beta');
+const aiBetaStatus = document.getElementById('ai-beta-status');
 const pancakeTab = document.getElementById('tab-pancake');
 const posTab = document.getElementById('tab-poscake');
 const pancakePane = document.getElementById('pane-pancake');
@@ -12,6 +14,26 @@ const status = document.getElementById('site-status');
 const recordButton = document.getElementById('record-ui');
 const copyButton = document.getElementById('copy-ui');
 const recordStatus = document.getElementById('record-status');
+
+// Beta only enables the explicit sample analysis page, not live order creation.
+function updateAiBetaStatus(enabled) {
+  aiBetaToggle.checked = Boolean(enabled);
+  aiBetaStatus.textContent = enabled
+    ? 'Beta đã bật. Mở Kết nối ChatGPT để thử hội thoại thật hoặc chat mẫu. Chưa tự tạo đơn.'
+    : 'Beta đang tắt. Có thể mở trang kết nối để thiết lập.';
+}
+
+chrome.storage.local.get({ aiAutoOrderBeta: false }, ({ aiAutoOrderBeta }) => {
+  updateAiBetaStatus(aiAutoOrderBeta);
+});
+aiBetaToggle.addEventListener('change', () => {
+  const enabled = aiBetaToggle.checked;
+  chrome.storage.local.set({ aiAutoOrderBeta: enabled });
+  updateAiBetaStatus(enabled);
+});
+document.getElementById('open-ai-settings').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('ai-beta.html') });
+});
 
 function updateRecordStatus({ uiRecording = false, uiEvents = [] }) {
   recordButton.textContent = uiRecording ? 'Dừng ghi nhận' : 'Bắt đầu ghi nhận';
@@ -37,6 +59,7 @@ chrome.storage.local.get({ posGroupPrint: false }, ({ posGroupPrint }) => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
+  if (changes.aiAutoOrderBeta) updateAiBetaStatus(changes.aiAutoOrderBeta.newValue);
   if (changes.autoOrder) toggle.checked = changes.autoOrder.newValue;
   if (changes.autoPrintNote) noteToggle.checked = changes.autoPrintNote.newValue;
   if (changes.autoMienSamPrice) priceToggle.checked = changes.autoMienSamPrice.newValue;
@@ -89,7 +112,7 @@ recordButton.addEventListener('click', () => {
     if (uiRecording) {
       chrome.storage.local.set({ uiRecording: false });
     } else {
-      chrome.storage.local.set({ autoOrder: false, uiRecording: true, uiEvents: [] });
+      chrome.storage.local.set({ uiRecording: true, uiEvents: [] });
     }
   });
 });

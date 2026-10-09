@@ -1,13 +1,16 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 03/10/2026. Phiên bản manifest: `0.4.1`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Không có backend, build tool, API key hay cookie trong dự án.
+Cập nhật: 09/10/2026. Phiên bản manifest: `0.6.0`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
 
 ## Cấu trúc dự án
 
 | File | Vai trò |
 | --- | --- |
 | `manifest.json` | Tên, mô tả, quyền, khai báo content scripts và popup. Nạp `product-summary.js`, `pricing.js` trước `content.js`. |
-| `popup.html`, `popup.css`, `popup.js` | Popup hai mục Pancake/POS Cake. Giữ năm công tắc Pancake, thêm công tắc POS; lưu lựa chọn vào `chrome.storage.local`. |
+| `popup.html`, `popup.css`, `popup.js` | Popup hai mục Pancake/POS Cake. Năm công tắc Pancake, công tắc AI Beta và công tắc POS; lưu lựa chọn vào `chrome.storage.local`. |
+| `AI_BETA_PLAN.md` | Đánh giá, lịch sử và bước tiếp theo sau kết nối ChatGPT. |
+| `ai-beta.html/js/css` | Trang đăng nhập và thử phân tích chat mẫu, không đọc chat trực tiếp. |
+| `ai-bridge.cjs`, `ai-protocol.cjs`, `ai-protocol.test.cjs` | Helper OAuth localhost, parser/kiểm tra và kiểm thử bằng tài khoản mô phỏng. |
 | `content.js` | Nghe sự kiện trên trang, tự động mở form, điền ghi chú, tùy chọn tạo đơn và chuẩn hóa tag. |
 | `product-summary.js` | Hàm thuần `summarizeProducts(products)`; chạy trong content script và cũng xuất CommonJS để thử bằng Node. |
 | `product-summary.test.js` | Kiểm tra phép nhân quy cách với số lượng, gộp sản phẩm cùng loại và xử lý dữ liệu thiếu. |
@@ -17,14 +20,25 @@ Cập nhật: 03/10/2026. Phiên bản manifest: `0.4.1`. Đây là extension Ch
 | `pos-content.js`, `pos-content.css` | Nút nổi và bảng phân nhóm trên trang Đơn hàng POS; quét DOM, chọn nhóm và gọi nút in hàng loạt gốc của POS. |
 | `README.md` | Hướng dẫn cài đặt, sử dụng và chuyển sang máy khác. |
 | `AGENTS.md` | Điểm bắt đầu ngắn gọn cho AI tiếp quản dự án. |
+| `tests/serve.cjs`, `tests/pancake-fixture.html`, `tests/pancake-fixture.js` | Trang kiểm thử Chrome cục bộ, dùng mã extension thật và DOM mô phỏng đã đối chiếu với Pancake. Không chứa dữ liệu khách hoặc gọi Pancake. |
 
-Không cần `npm install`. Node chỉ cần để chạy bài kiểm tra; Chrome nạp trực tiếp các file từ thư mục.
+Không cần `npm install`. Chrome nạp trực tiếp các file extension; Node cần cho kiểm thử và helper kết nối ChatGPT.
+
+## AI tự lên đơn — Beta (0.6.0)
+
+Phiên bản mới nhất 0.6.0 thêm `chat-reader.js`/`chat-content.js` trong content script Pancake. Bộ chọn đã đối chiếu trên trang đăng nhập ngày 09/10/2026: `.message-list.media-list-conversation .inbox-message-ele`, vai trò `.media-current-customer`/`.media-current-user`, văn bản `.media-body .message-text-ele`. `buildTranscript()` lọc điện thoại/email/link/dòng địa chỉ thường gặp và thông báo media/unknown; không khẳng định đầy đủ hoặc ẩn danh tuyệt đối. `collectMessages()` từ chối >8.000 ký tự, không tự cắt/cuộn. Các message `pap-read-chat`/`pap-check-chat` chỉ chấp nhận sender.id đúng extension và Beta bật; snapshot giữ row DOM + chữ ký nội dung tại máy, không ghi storage. Trang AI gửi tabs.sendMessage, cho sửa bản xem trước, kiểm tra snapshot trước và sau inference. Không đổi helper/cloud request hoặc năm luồng lên đơn cũ. Chạy thêm `node --test chat-reader.test.cjs ai-transport.test.cjs`. Tool trình duyệt bị policy chặn chrome-extension:// nên người dùng thực hiện lượt inference trực tiếp; không tuyên bố đã kiểm thử lượt đó nếu chưa có kết quả.
+
+Phiên bản mới nhất 0.5.1: `callBridge()` luôn POST JSON, kể cả `/status` và `/models`, vì Chrome có thể không gửi Origin trên GET. Helper chấp nhận POST cho hai endpoint đọc này, vẫn giữ GET cho client cũ có Origin hợp lệ. Không mở quyền cho Origin thiếu/null/sai ID. Khi cập nhật phải khởi động lại cả helper Node và trang extension; phiên đăng nhập cũ trong bộ nhớ mất sau restart. Kiểm thử hồi quy bao gồm transport POST, preflight và giữ chặn yêu cầu sai Origin.
+
+Manifest hiện tại 0.5.0. `aiAutoOrderBeta` (mặc định false) cho phép thử chat mẫu trong `ai-beta.html/js/css`, mở từ popup. `ai-bridge.cjs` là server Node bind 127.0.0.1:18765 nhận OAuth callback `/auth/callback` và chuyển yêu cầu tới OpenAI. Chạy với đúng ID extension; CORS/origin và Host được kiểm tra. `/login` tạo PKCE/state/nonce; callback kiểm tra chữ ký JWKS, issuer/audience/nonce/expiry và scopes. `/models` lấy `models` theo quyền tài khoản; `/analyze` yêu cầu model trong danh sách, đọc SSE tới `response.completed` rồi kiểm tra JSON sản phẩm/kg. Không dùng endpoint backend-api. Token chỉ trong bộ nhớ, không tự refresh; hết phiên đăng nhập lại. Host ID không bí mật nằm ngoài repo ở LOCALAPPDATA/PancakeAssistantPro/ai-host-id.txt. Không log token/chat.
+
+`ai-protocol.cjs` chứa OAuth/kiểm tra token/parser SSE/parser đề xuất; `ai-protocol.test.cjs` kiểm tra các ranh giới này và server origin. Chạy `node --test ai-protocol.test.cjs product-summary.test.js pricing.test.js`. Manifest thêm localhost host permission; trang Pancake/POS không được cấp quyền đọc token. Chưa có engine đọc chat hay điền SKU/đơn. Content scripts không dùng cờ Beta; bật Beta không kích hoạt `autoSubmitOrder`. Chỉ gửi mẫu khi người dùng bấm Phân tích; trạng thái ghi rõ chưa tạo đơn. Sau tắt Beta kết quả đang về bị bỏ, nhưng request đã gửi vẫn có thể tiêu thụ hạn mức. Xem AI_BETA_PLAN.md. Giữ năm công tắc hiện tại độc lập; không tự tích Miễn phí giao hàng.
 
 ## Thiết lập và di chuyển
 
 Sao chép cả thư mục chứa `manifest.json`, dùng **Tải tiện ích đã giải nén** tại `chrome://extensions`, rồi tải lại các tab Pancake/POS Cake. Sau mỗi lần sửa file extension, phải tải lại extension **và** tab đang dùng vì content script cũ vẫn nằm trong tab chưa tải lại. `chrome.storage.local` thuộc hồ sơ Chrome, không nằm trong thư mục dự án; công tắc trên máy mới trở về mặc định. Pancake/POS Cake cần được đăng nhập riêng trên máy mới. Không chuyển cookie cho AI hoặc lưu cookie vào mã nguồn.
 
-Repository hiện chưa có commit. Nếu dùng Git để chuyển máy, cần commit/push toàn bộ các file trước; nếu không, chỉ việc sao chép nguyên thư mục dự án.
+Repository đã có lịch sử Git; các thay đổi đang làm có thể chưa commit. Nếu dùng Git để chuyển máy, cần commit/push toàn bộ các file cần chuyển trước; nếu không, chỉ việc sao chép nguyên thư mục dự án.
 
 Manifest hiện yêu cầu `storage`, `activeTab` và quyền truy cập `pancake.vn`. Popup hiển thị tên **Pancake Assistant Pro**; mô tả manifest là **DEV: Bố Hoàng No1**.
 
@@ -38,18 +52,20 @@ Manifest hiện yêu cầu `storage`, `activeTab` và quyền truy cập `pancak
 | `autoSubmitOrder` | `false` | Sau khi ghi chú đã điền, lưu ghi chú rồi bấm Tạo đơn. Chỉ có tác dụng khi `autoPrintNote` bật. |
 | `autoOrderTags` | `false` | Sau khi đơn mới được xác nhận, chỉ giữ Đã Lên Đơn và Đã Gửi. Áp dụng cho cả nút Tạo đơn bấm tay. |
 | `posGroupPrint` | `false` | Bật nút Phân nhóm đơn trên trang Đơn hàng POS Cake. |
-| `uiRecording` | `false` | Chế độ chẩn đoán ghi nhận 4 lần bấm; ngăn các luồng tự động đang chạy. |
+| `uiRecording` | `false` | Chế độ chẩn đoán ghi nhận 4 lần bấm; tạm ngăn các luồng tự động khi đang ghi nhận. Bật chế độ này không đổi công tắc `autoOrder`. |
 | `uiEvents` | `[]` | Dữ liệu chẩn đoán gồm tag HTML, class, role, placeholder và vị trí. Không chứa nội dung chat hay cookie. |
 
 ### 1. Mở form và chọn địa chỉ
 
-`content.js` bắt sự kiện `click` ở giai đoạn capture. Khi người dùng bấm trong `.conversation-list-item`, `prepareOrder()` đợi 180 ms để Pancake đổi hội thoại, bấm tab **Tạo mới**, bấm ô địa chỉ và chọn `role="option"` đầu tiên trong danh sách nằm ngay dưới ô. `runId` hủy luồng cũ khi chọn hội thoại khác hoặc tắt công tắc. Nếu không có gợi ý thì dừng, không điền địa chỉ tùy đoán.
+`content.js` bắt sự kiện `click` ở giai đoạn capture. Khi người dùng bấm trong `.conversation-list-item`, `prepareOrder()` đợi 180 ms để Pancake đổi hội thoại, bấm tab **Tạo mới**, bấm ô địa chỉ và chọn `role="option"` hợp lệ đầu tiên theo thứ tự DOM trong danh sách nằm ngay dưới ô. Sau đó theo dõi tab trong 500 ms bằng MutationObserver; nếu Pancake vừa chuyển lại **Thông tin** trong quá trình tải hội thoại, lặp lại thao tác ngay, tối đa một lần. Không chờ đủ 500 ms mới phục hồi. `runId` hủy luồng cũ khi chọn hội thoại khác, tắt công tắc, bật ghi nhận, người dùng thao tác trong `.crm-platform`/dropdown hoặc bấm Tạo đơn. Các lần `.click()` của extension không bị hiểu nhầm là thao tác thủ công (`event.isTrusted`). Nếu không có gợi ý thì dừng, không điền địa chỉ tùy đoán. Từ 08/10/2026, dòng hội thoại không còn thuộc tính `id`; `selectedConversationId()` dùng chính phần tử `.conversation-list-item.selected` làm dấu hiệu nhận diện nếu thiếu `id`. Các luồng giá, tự tạo đơn và tag so sánh phần tử này để không chạy sang hội thoại khác.
+
+`waitForDom(find, current, timeoutMs)` kiểm tra ngay, sau đó chỉ giữ MutationObserver trong lúc chờ DOM. Timer 80 ms dự phòng dùng để nhận hủy tác vụ hoặc thay đổi thuộc tính input không gây mutation. Observer/timer được dọn khi đạt điều kiện, hết hạn hoặc `current()` không còn đúng. Mở địa chỉ, mở ghi chú, xác nhận giá, chờ lưu ghi chú, nhận đơn mới và xác nhận tag dùng helper này. Các lần chờ 80 ms cố định trước ghi chú/tạo đơn đã đổi thành nhường một lượt event loop (`pause(0)`) để Pancake xử lý xong sự kiện React.
 
 ### 2. Tóm tắt sản phẩm vào Ghi chú in
 
 Extension **không tự tích Miễn phí giao hàng**. Khi checkbox này chuyển sang trạng thái tích, `orderProducts()` đọc mỗi `.row-table-product`: tên ở cột sản phẩm, số lượng ở cột số lượng. `summarizeProducts()` nhận quy cách `kg` hoặc `g` từ **tên sản phẩm**, nhân với số lượng, gộp các dòng cùng loại và viết kiểu `4kg miến sâm nhỏ + 6kg miến sâm to`. Tiền tố năm `(2026)` được bỏ; cụm `Miến Sâm Sợi` được rút còn `miến sâm`. Sản phẩm không có quy cách trong tên được ghi `số lượng x tên` để không bị mất khỏi ghi chú. Dữ liệu thiếu hoặc số lượng không hợp lệ làm hàm trả `null`, không điền ghi chú và không tự tạo đơn.
 
-Pancake từng hiển thị dòng phụ `1000 g` ngay cả cho sản phẩm tên `2KG`; **đừng** thay thuật toán bằng cách đọc dòng phụ đó. Ghi chú cũ có nội dung khác sẽ được giữ lại và nối thêm bằng ` | `. Nếu ghi chú cũ chỉ là tóm tắt khối lượng, extension thay nó bằng tóm tắt mới. React textarea được cập nhật bằng native setter của `HTMLTextAreaElement` và sự kiện `input` để Pancake nhận trạng thái mới. Khi `autoSubmitOrder` tắt, extension **chỉ điền**, để người dùng tự bấm Lưu.
+Pancake từng hiển thị dòng phụ `1000 g` ngay cả cho sản phẩm tên `2KG`; **đừng** thay thuật toán bằng cách đọc dòng phụ đó. Ghi chú cũ có nội dung khác sẽ được giữ lại và nối thêm bằng ` | `. Nếu ghi chú cũ chỉ là tóm tắt khối lượng, extension thay nó bằng tóm tắt mới. Trước khi điền, kiểm tra lại hội thoại, checkbox miễn phí giao hàng và danh sách sản phẩm vẫn khớp dữ liệu đã đọc; nếu người dùng đổi giữa chừng thì dừng. React textarea được cập nhật bằng native setter của `HTMLTextAreaElement` và sự kiện `input` để Pancake nhận trạng thái mới. Khi `autoSubmitOrder` tắt, extension **chỉ điền**, để người dùng tự bấm Lưu.
 
 ### 3. Điều chỉnh giá và tùy chọn tự tạo đơn
 
@@ -75,11 +91,13 @@ Người dùng bấm **Chọn nhóm để in** để tích các checkbox POS c�
 
 ## Bộ chọn DOM đã xác nhận trên Pancake
 
-Những bộ chọn sau được đọc từ trang Pancake đang đăng nhập trong Chrome ngày 26/09/2026. Chúng phụ thuộc giao diện của Pancake và có thể cần sửa khi Pancake cập nhật.
+Từ 0.4.4, `selectGroup(group, button)` thêm class `pap-pos-selected` vào chính nút chọn của nhóm sau khi đã xác nhận đủ đơn. Class chỉ đổi nền thành xám, không đặt `disabled`, không có nghĩa là đã in; các nhóm đã thao tác giữ dấu này khi chọn nhóm khác. `clearGroups()` bỏ chọn `selectedKeys` của extension bằng `changeSelection()` nếu vẫn ở URL đã quét, rồi xóa `lastScan`, `selectedKeys` và các thẻ nhóm. Không tự bỏ chọn đơn ngoài tập theo dõi. Nếu bộ lọc/URL đổi, chỉ xóa kết quả và nhắc người dùng bỏ chọn POS còn lại. Clear từ chối trong lúc quét/chọn hoặc khi có modal; nếu bỏ chọn nhóm cũ không đủ, giữ kết quả để người dùng thử lại. Quét lại tạo nút mới nên xóa dấu màu xám.
+
+Những bộ chọn sau được đọc từ trang Pancake đang đăng nhập trong Chrome ngày 26/09/2026 và đối chiếu lại ngày 09/10/2026. Chúng phụ thuộc giao diện của Pancake và có thể cần sửa khi Pancake cập nhật.
 
 | Thành phần | Bộ chọn hoặc dấu hiệu |
 | --- | --- |
-| Hội thoại đang chọn | `.conversation-list-item.selected` và thuộc tính `id` |
+| Hội thoại đang chọn | `.conversation-list-item.selected`; hiện không có `id`, dùng tham chiếu phần tử |
 | Một dòng hội thoại | `.conversation-list-item` |
 | Tab Tạo mới | `.crm-platform .tab-label-item` có chữ `Tạo mới` |
 | Ô địa chỉ | `.customer-address input[placeholder="Địa chỉ"]` |
@@ -118,6 +136,8 @@ Sau đó tải lại extension và tab Pancake, thử lần lượt các công t
 Khi thêm tính năng: tạo công tắc riêng trong popup, dùng khóa mới của `chrome.storage.local`, cập nhật biến và listener trong `content.js`, hủy tác vụ bất đồng bộ khi tắt công tắc hoặc đổi hội thoại, và cập nhật tài liệu này. Với phép biến đổi dữ liệu như tóm tắt sản phẩm, ưu tiên hàm thuần có bài kiểm tra. Với thao tác trên trang, dùng bộ chọn gắn với thành phần thực tế và kiểm tra trạng thái sau mỗi bước. Tránh truy cập API nội bộ hoặc lưu thông tin đăng nhập Pancake nếu không có yêu cầu rõ ràng.
 
 ## Giới hạn hiện tại
+
+Kiểm thử trình duyệt cục bộ: chạy `node tests/serve.cjs`, mở `http://127.0.0.1:8765/multi_pages` trong Chrome rồi bấm **Chạy toàn bộ kiểm thử**. Trang nạp `content.js`, `product-summary.js`, `pricing.js` thật, mock `chrome.storage.local` và mô phỏng DOM theo các bộ chọn đã xác nhận. Kết quả kiểm tra gồm ghi chú/giá, tạo thủ công/tự động, tag thành công/thất bại, hủy khi đổi hội thoại/sản phẩm/công tắc, phục hồi tab và dọn MutationObserver. Nút **Chuẩn bị thử ưu tiên thao tác tay** dùng để kiểm tra bằng click thật (`isTrusted`) rằng tab Thông tin không bị extension mở lại. Đây là kiểm tra hồi quy cục bộ, không thay thế đối chiếu trên Pancake đăng nhập khi trang đổi DOM.
 
 - Giao diện Pancake là ứng dụng một trang và class DOM có thể đổi; extension sẽ cần cập nhật bộ chọn nếu luồng ngừng hoạt động.
 - Ghi chú dựa trên quy cách nằm trong tên sản phẩm. Tên không ghi `kg/g` được giữ ở dạng số lượng, không suy ra khối lượng.

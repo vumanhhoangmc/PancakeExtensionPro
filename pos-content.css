@@ -5,6 +5,8 @@
 #pap-pos-panel button { border: 1px solid #c6d3e3; border-radius: 5px; background: #fff; color: #175cd3; cursor: pointer; padding: 6px 9px; margin: 4px 6px 4px 0; font: inherit; }
 #pap-pos-panel #pap-pos-close { border: 0; font-size: 24px; line-height: 1; }
 #pap-pos-panel #pap-pos-scan { background: #175cd3; color: white; border-color: #175cd3; }
+#pap-pos-panel button.pap-pos-selected { background: #e4e7ec; border-color: #c1c7d0; color: #475467; cursor: pointer; }
+#pap-pos-panel button.pap-pos-selected:hover { background: #d0d5dd; }
 #pap-pos-panel #pap-pos-status { color: #475467; }
 #pap-pos-panel .pap-pos-group { border-top: 1px solid #eaecf0; padding: 11px 0; }
 #pap-pos-panel .pap-pos-group strong, #pap-pos-panel .pap-pos-group small { display: block; }

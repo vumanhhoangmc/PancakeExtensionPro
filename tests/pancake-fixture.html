@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="vi"><meta charset="utf-8"><title>Pancake Assistant Pro — kiểm thử cục bộ</title>
+<style>
+body{font:14px system-ui;margin:24px;color:#15243a}h1{font-size:22px}button{cursor:pointer;padding:8px;margin:3px}input,textarea{padding:6px}main{display:flex;gap:24px}.conversations{width:150px}.conversation-list-item{padding:20px;border:1px solid #ddd;cursor:pointer}.selected{background:#d4edff}.crm-platform{width:500px}.tab-label-item.active{background:#b8e4ff}.view-order{padding:10px}.row-table-product{display:flex;margin:8px 0}.col-product-name{width:280px}.table-product input{width:70px}.row-content-payment{display:flex;justify-content:space-between;padding:5px}.note-print-order{margin-top:10px}textarea{display:block;width:95%}.box-footer{padding:10px;background:#eee}.btn-tag-item .ellipse{display:inline-block;width:6px;height:6px;background:white;border-radius:50%;margin-right:6px}.btn-tag-item{background:#a4d3b4}#suggestions{position:absolute;z-index:2;background:white;border:1px solid #ddd;width:440px}[role=option]{height:30px;padding:2px 8px;box-sizing:border-box}.pass{color:#087438}.fail{color:#bb1212}#results{margin-top:20px}.note-text{padding:8px;background:#eee}
+</style>
+<h1>Pancake Assistant Pro — kiểm thử cục bộ</h1>
+<p>Chạy mã extension thật với cấu trúc DOM đã đối chiếu trên Pancake. Mọi đơn và khách bên dưới là dữ liệu mô phỏng.</p>
+<button id="run-tests">Chạy toàn bộ kiểm thử</button><button id="manual-test">Chuẩn bị thử ưu tiên thao tác tay</button>
+<main><div class="conversations"><div class="conversation-list-item selected">Khách A</div><div class="conversation-list-item">Khách B</div><div class="conversation-list-item">Khách C</div></div>
+<div class="crm-platform"><div><button class="tab-label-item active">Thông tin</button><button class="tab-label-item">Tạo mới</button></div><div id="panel"></div><div class="recent-orders"></div></div></main>
+<div id="tags"></div><p id="manual-status"></p><ol id="results"></ol>
+<script src="/fixture.js"></script><script src="/product-summary.js"></script><script src="/pricing.js"></script><script src="/content.js"></script>
+</html>

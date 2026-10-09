@@ -21,3 +21,5 @@ h1 { margin: 0; font-size: 17px; }
 .sections button.active { color: #175cd3; border-bottom-color: #175cd3; }
 [hidden] { display: none !important; }
 .pos-hint { color: #607086; font-size: 12px; line-height: 1.5; }
+.beta-badge { display: inline-block; margin-left: 4px; padding: 2px 5px; border-radius: 4px; background: #fff1cc; color: #805600; font: 600 10px Arial, sans-serif; vertical-align: middle; }
+.beta-status { margin: 8px 0 0; padding: 8px; border-radius: 5px; background: #f1f5fa; color: #607086; font-size: 12px; line-height: 1.4; }

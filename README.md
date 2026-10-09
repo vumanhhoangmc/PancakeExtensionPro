@@ -17,7 +17,27 @@ Nếu chuyển bằng Git thay vì sao chép thư mục, hãy commit và đẩy 
 
 ## Giao diện hai mục
 
-Popup có mục **Pancake** cho năm tính năng lên đơn hiện có và mục **POS Cake** cho tính năng phân nhóm đơn để in. Khi mở popup trên trang Đơn hàng POS, mục POS Cake được chọn sẵn.
+Popup có mục **Pancake** cho năm tính năng lên đơn hiện có và công tắc **AI tự lên đơn — Beta**, cùng mục **POS Cake** cho tính năng phân nhóm đơn để in. Khi mở popup trên trang Đơn hàng POS, mục POS Cake được chọn sẵn.
+
+### AI tự lên đơn — Beta (0.5.0)
+
+**0.6.0 — thử hội thoại thật:** tải lại extension và tab Pancake, mở hội thoại cần thử rồi vào **Kết nối ChatGPT / Thử AI**. Chọn tab Pancake và bấm **Đọc hội thoại Pancake đang mở**. Xem lại văn bản, xóa dữ liệu riêng còn sót rồi bấm **Phân tích bằng ChatGPT**. Chỉ gửi bản xem trước khi bạn bấm nút phân tích; đọc chat chưa gọi AI. Không điền sản phẩm/tạo đơn/gửi tin cho khách. Không cần khởi động lại helper nếu đang dùng 0.5.1.
+
+Phần đọc giữ thứ tự tin và vai trò khách/shop, ẩn số điện thoại, email, link và dòng địa chỉ thường gặp; bộ lọc không bảo đảm xóa mọi thông tin riêng nên phải kiểm tra bản xem trước. Chỉ đọc lịch sử đang tải trong DOM, không tự kéo lịch sử, không đọc ảnh/voice. Nếu đổi hội thoại hoặc có tin thay đổi trong lúc thử, kết quả bị bỏ và yêu cầu đọc lại. Hội thoại dài hơn 8.000 ký tự không tự cắt mất ngữ cảnh; có thể chọn phần mua hàng để nhập mẫu. Sau phân tích hãy so kết quả với chat thật: loại to/nhỏ, tổng kg, khách chốt/hủy/hỏi giá. Chưa có đối chiếu SKU hoặc cơ chế tránh đơn trùng nên kết quả chỉ là đề xuất.
+
+Bản sửa 0.5.1: nếu từng thấy “Chỉ extension đã cấu hình được truy cập” sau đăng nhập, tải lại extension, đóng/mở lại trang Kết nối AI, dừng helper Node bằng Ctrl+C rồi chạy lại lệnh ở bước 1. Đăng nhập lại vì token chỉ ở bộ nhớ. Yêu cầu kiểm tra kết nối nay dùng POST để tránh thiếu header Origin trên GET; đúng ID extension vẫn được kiểm tra.
+
+Công tắc mặc định **tắt**, lưu riêng theo hồ sơ Chrome. Bản 0.5.0 có kết nối **Sign in with ChatGPT** để thử dùng hạn mức Plus/Pro của tài khoản đủ điều kiện. Hiện chỉ phân tích **chat mẫu bạn nhập**, trả loại sản phẩm, tổng kg, ý định mua/hủy/hỏi giá; chưa đọc hội thoại Pancake, chọn SKU hoặc tạo đơn tự động.
+
+1. Tải lại extension, mở popup → **Kết nối ChatGPT / Thử AI**.
+2. Trang kết nối hiện lệnh `node ai-bridge.cjs <ID-extension-của-bạn>`. Sao chép và chạy trong terminal tại thư mục dự án; cần Node.js 22 trở lên. Giữ chương trình chạy khi dùng AI.
+3. Bấm **Continue with ChatGPT**, đăng nhập tại trang OpenAI và cấp quyền dùng hạn mức gói. Không gửi cookie, mật khẩu hay API key cho AI phát triển.
+4. Quay lại trang kết nối, bấm **Kiểm tra kết nối**, chọn model từ tài khoản.
+5. Bật công tắc Beta trong popup; nhập chat mẫu đã ẩn danh rồi bấm **Phân tích bằng ChatGPT**. Nội dung này sẽ được gửi tới OpenAI, có thể dùng hạn mức Plus. Kết quả chỉ là đề xuất để kiểm chứng khả năng nhận diện.
+
+Chương trình kết nối chạy trên `127.0.0.1:18765`, chỉ cho ID extension bạn truyền vào truy cập. Token chỉ giữ trong bộ nhớ, không lưu vào dự án; dừng chương trình hoặc hết hạn phiên phải đăng nhập lại. Ngắt kết nối xóa phiên tại máy, không thu hồi quyền đã cấp trên tài khoản OpenAI. Muốn thu hồi hoàn toàn, dùng cài đặt quyền ứng dụng ChatGPT. Không có cơ chế tự chuyển sang API tính phí. Khi hết hạn mức/không có quyền/model, hiển thị lỗi và dừng phân tích. Đăng nhập và phân tích bằng tài khoản thật cần được kiểm chứng sau khi bạn cấp quyền.
+
+Phân tích và lộ trình tiếp theo nằm trong [AI_BETA_PLAN.md](AI_BETA_PLAN.md).
 
 ## Các công tắc Pancake
 
@@ -31,7 +51,15 @@ Popup có mục **Pancake** cho năm tính năng lên đơn hiện có và mục
 
 Extension **không tự tích Miễn phí giao hàng**. Khi **Tự tạo đơn** tắt, bạn tự xem lại, lưu ghi chú và tạo đơn. Khi **Chuẩn hóa tag** tắt, extension không sửa tag.
 
+Bản 0.4.2 tiếp tục nhận diện đúng hội thoại khi Pancake không còn gắn `id` lên dòng hội thoại; bước điều chỉnh giá và tự tạo đơn không bị dừng sớm vì thiếu `id`. Nếu Pancake trả tab về **Thông tin** trong lúc đổi hội thoại, extension kiểm tra và mở lại **Tạo mới** một lần.
+
+Bản 0.4.3 phản ứng ngay khi giao diện sẵn sàng để giảm thời gian chờ giữa các bước. Khi bạn thao tác thủ công trong form hoặc bấm Tạo đơn, extension hủy thao tác mở form/chọn địa chỉ còn chờ. Ghi chú cũng được kiểm tra lại theo hội thoại và sản phẩm hiện tại trước khi điền.
+
+Trong **Kiểm tra giao diện**, việc ghi nhận tạm dừng các thao tác tự động cho đến khi đủ 4 lần bấm hoặc bạn bấm **Dừng ghi nhận**. Bắt đầu ghi nhận không thay đổi các công tắc tính năng đã chọn.
+
 ## Phân nhóm đơn trên POS Cake
+
+Nút **Clear** xóa kết quả phân nhóm và bỏ chọn các đơn do extension đã chọn trong bộ lọc hiện tại. Nếu còn đơn được chọn thủ công trên POS, hãy bỏ chọn trước khi quét lại. Sau khi **Chọn nhóm để in** thành công, nút của nhóm đó chuyển màu xám để đánh dấu đã thao tác; vẫn có thể bấm lại để chọn lại nhóm. Màu xám được giữ đến khi Clear hoặc quét lại.
 
 1. Trên trang **Đơn hàng** của POS Cake, đặt bộ lọc đơn cần in (ví dụ **Chưa in**).
 2. Trong popup, mở mục **POS Cake** và bật **Phân nhóm đơn để in**.
@@ -68,6 +96,8 @@ Extension lấy quy cách từ **tên sản phẩm**, không lấy dòng khối 
 ## Kiểm tra nhanh
 
 Chạy `node --test product-summary.test.js pricing.test.js pos-groups.test.js` để kiểm tra phép tính khối lượng, bảng giá và gom nhóm. Có thể chạy `node --check content.js`, `node --check pos-content.js` và `node --check popup.js` để kiểm tra cú pháp. Kiểm thử luồng tạo đơn và tag trên một hội thoại thử nghiệm; nút **Tạo đơn** có tác dụng thật trên Pancake.
+
+Để thử toàn bộ luồng bằng dữ liệu mô phỏng trên Chrome, chạy `node tests/serve.cjs`, mở `http://127.0.0.1:8765/multi_pages` rồi bấm **Chạy toàn bộ kiểm thử**. Trang này dùng mã extension thật, không tạo đơn trên Pancake. Các bộ chọn vẫn cần được đối chiếu lại trên trang đăng nhập khi Pancake đổi giao diện.
 
 ## Dành cho người phát triển hoặc AI tiếp theo
 

@@ -1,0 +1,8 @@
+:root { font-family: Arial, sans-serif; color: #1c2b3d; background: #f3f6fb; }
+main { max-width: 720px; margin: 30px auto; padding: 0 18px; }
+h1 { font-size: 24px; } h1 small { font-size: 12px; color: #805600; background: #fff1cc; padding: 4px 7px; border-radius: 5px; }
+section { background: white; padding: 20px; margin: 18px 0; border: 1px solid #dce3eb; border-radius: 10px; }
+h2 { font-size: 17px; margin-top: 0; } p { font-size: 14px; line-height: 1.6; color: #607086; }
+button { padding: 9px 12px; margin: 8px 6px 8px 0; border: 1px solid #c6d3e3; background: white; color: #175cd3; border-radius: 5px; cursor: pointer; } button:disabled { opacity: .5; cursor: default; }
+label { display: block; font-size: 14px; margin-top: 12px; } select, textarea { box-sizing: border-box; width: 100%; margin-top: 8px; padding: 9px; border: 1px solid #c6d3e3; border-radius: 5px; font: 14px Arial; }
+code, pre { display: block; background: #f3f6fb; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }

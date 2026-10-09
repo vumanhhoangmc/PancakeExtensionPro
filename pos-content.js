@@ -159,7 +159,7 @@
       const select = document.createElement('button');
       select.type = 'button';
       select.textContent = 'Chọn nhóm để in';
-      select.addEventListener('click', () => selectGroup(group));
+      select.addEventListener('click', () => selectGroup(group, select));
       const print = document.createElement('button');
       print.type = 'button';
       print.textContent = 'In nhóm bằng POS';
@@ -208,7 +208,7 @@
     }
   }
 
-  async function selectGroup(group) {
+  async function selectGroup(group, button) {
     if (scanning || !lastScan || lastScan.url !== location.href) {
       setStatus('Bộ lọc đã thay đổi. Hãy quét lại đơn.');
       return;
@@ -238,7 +238,37 @@
         return;
       }
       selectedKeys = keys;
+      button.classList.add('pap-pos-selected');
+      button.title = 'Nhóm đã chọn. Bấm lại để chọn lại nhóm này.';
       setStatus(`Đã chọn ${keys.size} đơn nhóm “${group.label}”. Kiểm tra mã đơn rồi bấm “In nhóm bằng POS”.`);
+    } finally {
+      scanning = false;
+    }
+  }
+
+  async function clearGroups() {
+    if (scanning) {
+      setStatus('Đang xử lý đơn. Hãy đợi hoàn tất rồi bấm Clear.');
+      return;
+    }
+    if ($('.ant-modal[role="dialog"]')) {
+      setStatus('Hãy đóng cửa sổ POS đang mở trước khi bấm Clear.');
+      return;
+    }
+    scanning = true;
+    try {
+      if (lastScan?.url === location.href && selectedKeys.size && nativeSelectedCount() > 0 &&
+          !await changeSelection(selectedKeys, false)) {
+        setStatus('Chưa bỏ chọn hết nhóm cũ. Hãy bỏ chọn trên POS rồi bấm Clear lại.');
+        return;
+      }
+      lastScan = null;
+      selectedKeys = new Set();
+      $('#pap-pos-groups')?.replaceChildren();
+      const remaining = nativeSelectedCount();
+      setStatus(remaining > 0
+        ? `Đã xóa kết quả phân nhóm. Còn ${remaining} đơn được chọn trên POS; hãy bỏ chọn trước khi quét lại.`
+        : 'Đã xóa kết quả phân nhóm. Bạn có thể quét lại đơn.');
     } finally {
       scanning = false;
     }
@@ -274,10 +304,11 @@
     const panel = document.createElement('section');
     panel.id = 'pap-pos-panel';
     panel.hidden = true;
-    panel.innerHTML = '<header><strong>Phân nhóm đơn POS Cake</strong><button type="button" id="pap-pos-close" aria-label="Đóng">×</button></header><p>Quét các đơn trong bộ lọc hiện tại, gom theo loại sản phẩm và tổng kg.</p><button type="button" id="pap-pos-scan">Quét và phân nhóm</button><p id="pap-pos-status" role="status"></p><div id="pap-pos-groups"></div>';
+    panel.innerHTML = '<header><strong>Phân nhóm đơn POS Cake</strong><button type="button" id="pap-pos-close" aria-label="Đóng">×</button></header><p>Quét các đơn trong bộ lọc hiện tại, gom theo loại sản phẩm và tổng kg.</p><button type="button" id="pap-pos-scan">Quét và phân nhóm</button><button type="button" id="pap-pos-clear">Clear</button><p id="pap-pos-status" role="status"></p><div id="pap-pos-groups"></div>';
     document.body.append(launcher, panel);
     $('#pap-pos-close').addEventListener('click', () => { panel.hidden = true; });
     $('#pap-pos-scan').addEventListener('click', scanOrders);
+    $('#pap-pos-clear').addEventListener('click', clearGroups);
   }
 
   function setEnabled(value) {
