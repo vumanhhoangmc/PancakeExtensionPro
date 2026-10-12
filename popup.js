@@ -1,4 +1,14 @@
 const toggle = document.getElementById('auto-order');
+const commentToggle = document.getElementById('auto-comment-reply');
+chrome.storage.local.get({ autoCommentReply: false }, ({ autoCommentReply }) => {
+  commentToggle.checked = Boolean(autoCommentReply);
+});
+commentToggle.addEventListener('change', () => {
+  chrome.storage.local.set({ autoCommentReply: commentToggle.checked });
+});
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.autoCommentReply) commentToggle.checked = Boolean(changes.autoCommentReply.newValue);
+});
 const noteToggle = document.getElementById('auto-print-note');
 const priceToggle = document.getElementById('auto-mien-sam-price');
 const submitToggle = document.getElementById('auto-submit-order');
@@ -15,11 +25,11 @@ const recordButton = document.getElementById('record-ui');
 const copyButton = document.getElementById('copy-ui');
 const recordStatus = document.getElementById('record-status');
 
-// Beta only enables the explicit sample analysis page, not live order creation.
+// Beta enables explicit analysis and draft filling, using the existing order workflow afterwards.
 function updateAiBetaStatus(enabled) {
   aiBetaToggle.checked = Boolean(enabled);
   aiBetaStatus.textContent = enabled
-    ? 'Beta đã bật. Mở Kết nối ChatGPT để thử hội thoại thật hoặc chat mẫu. Chưa tự tạo đơn.'
+    ? 'Beta đã bật. Mở Kết nối ChatGPT để phân tích sản phẩm, địa chỉ và điền đơn nháp.'
     : 'Beta đang tắt. Có thể mở trang kết nối để thiết lập.';
 }
 

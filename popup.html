@@ -15,6 +15,13 @@
         <button id="tab-poscake" type="button" role="tab" aria-controls="pane-poscake" aria-selected="false">POS Cake</button>
       </nav>
       <section id="pane-pancake" role="tabpanel" aria-labelledby="tab-pancake">
+      <label class="feature second-feature">
+        <span>
+          <strong>Hỗ trợ trả lời comment</strong>
+          <small>Điền lời nhắc vào comment. Sau khi bạn gửi, mở nhắn riêng bằng Alt+B và điền “/”. Bạn tự gửi nội dung.</small>
+        </span>
+        <input id="auto-comment-reply" type="checkbox" aria-label="Bật hỗ trợ trả lời comment">
+      </label>
       <label class="feature">
         <span>
           <strong>Hỗ trợ lên đơn</strong>
@@ -53,7 +60,7 @@
       <label class="feature second-feature">
         <span>
           <strong>AI tự lên đơn <em class="beta-badge">Beta</em></strong>
-          <small>Đọc hội thoại đang mở, xem trước rồi nhận diện sản phẩm và số kg bằng ChatGPT Plus/Pro.</small>
+        <small>Nhận diện sản phẩm, địa chỉ và điền đơn nháp bằng ChatGPT Plus/Pro.</small>
         </span>
         <input id="ai-auto-order-beta" type="checkbox" aria-label="Bật AI tự lên đơn Beta" aria-describedby="ai-beta-status">
       </label>

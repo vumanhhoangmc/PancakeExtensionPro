@@ -1,0 +1,24 @@
+<!doctype html><html lang="vi"><meta charset="utf-8"><title>Kiểm thử hỗ trợ comment</title><style>body{font:16px Arial;padding:30px;background:#f0f2f5;color:#172b4d}.conversation-list-item{padding:18px;background:white;margin:10px 0;cursor:pointer;border:1px solid #ddd}.selected{background:#d2ebff}textarea{width:650px;height:110px;padding:14px;font:16px Arial;border:1px solid #aab4c0;border-radius:8px}#messageCol{padding:24px;background:white}svg{width:20px;height:20px}</style>
+<h1>Hỗ trợ trả lời comment</h1><p>Dữ liệu mô phỏng. Không kết nối hoặc gửi tin nhắn tới Pancake.</p>
+<script>window.chrome={storage:{local:{get(_,fn){fn({autoCommentReply:true,uiRecording:false})}},onChanged:{addListener(){}}}};</script>
+<div class="conversation-list-item" id="comment-row">Hội thoại comment <span class="tag-wrap"><span class="list_tags_conv_123_456 list-tags-conv"></span><svg><path d="M232,128A104"></path></svg></span></div><div class="conversation-list-item" id="inbox-row">Hội thoại tin nhắn <span class="list_tags_conv_123_789 list-tags-conv"></span></div>
+<div id="messageCol"><div id="view"></div><div id="reply_box"><textarea id="replyBoxComposer" placeholder="Trả lời comment"></textarea><button class="new-reply-box-btn" id="send-comment">Gửi comment (mô phỏng)<svg><path d="M240,127.89"></path></svg></button></div><p>Chỉ điền bản nháp — không tự gửi.</p></div>
+<script src="/comment-followup.js"></script>
+<script src="/comment-reply.js"></script><script>
+function bindRow(row){row.addEventListener('click',()=>{
+  document.querySelectorAll('.selected').forEach(e=>e.classList.remove('selected'));
+  // Reproduce React replacing a row while retaining the root comment.
+  const replacement=row.cloneNode(true);replacement.classList.add('selected');row.replaceWith(replacement);bindRow(replacement);
+  if(replacement.id==='comment-row'){
+    if(!document.querySelector('#message_123_456')) document.querySelector('#view').innerHTML='<div class="post-module">Bài viết mẫu</div><div id="message_123_456" class="comment-message-ele">Khách: sản phẩm này còn không?<button class="comment-action-btn" onclick="openPrivate()">Nhắn riêng<svg><path d="M128,24A104 84,140"></path></svg></button></div>';
+  }else document.querySelector('#view').innerHTML='<div id="message_123_789" class="inbox-message-ele">Tin nhắn Messenger</div>';
+});}
+document.querySelectorAll('.conversation-list-item').forEach(bindRow);
+document.querySelector('#send-comment').addEventListener('click',()=>{
+  const input=document.querySelector('#replyBoxComposer');const text=input.value;if(!text.trim())return;
+  input.value='';const row=document.createElement('div');row.id='message_sent_'+Date.now();row.className='comment-message-ele media-current-user';const body=document.createElement('div');body.className='comment-body-text';text.split('\n').forEach((line,i)=>{if(i)body.append(document.createElement('br'));body.append(document.createTextNode(line));});row.append(body);document.querySelector('#view').append(row);
+});
+function openPrivate(){
+  const modal=document.createElement('section');modal.style.cssText='padding:20px;border:1px solid #ddd;background:white';modal.innerHTML='<h2>Gửi tin nhắn trực tiếp (mô phỏng)</h2><textarea id="previewReplyInput" placeholder="Nhập nội dung tin nhắn"></textarea>';document.body.append(modal);
+}
+</script></html>

@@ -16,6 +16,9 @@
   let recording = false;
   let recordedCount = 0;
   const generatedNotes = new WeakMap();
+  document.addEventListener('pap-ai-draft-start', () => {
+    runId++; noteRunId++; priceRunId++; autoSubmitRunId++;
+  });
 
   chrome.storage.local.get({ autoOrder: true, autoPrintNote: true, autoMienSamPrice: false, autoSubmitOrder: false,
     autoOrderTags: false, uiRecording: false, uiEvents: [] },

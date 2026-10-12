@@ -1,5 +1,11 @@
 # AI tự lên đơn — Beta
 
+## Tiến độ hiện tại: 0.7.0 — địa chỉ và điền đơn nháp
+
+Người dùng đã xác nhận phân tích sản phẩm từ hội thoại thật ổn. Thêm địa chỉ `delivery` có bằng chứng và trường thiếu/null; chọn hành chính old/new trên danh mục Pancake, đối chiếu SKU và điền số lượng. Miến tìm bằng 2026; cam ánh xạ Cam rốn lồi, khoai sọ ánh xạ Khoai sọ mán. Có nút Điền đơn trên Pancake sau khi xem đề xuất; chỉ dùng snapshot hội thoại thật chưa dùng, Beta bật và form trống. Chưa có chế độ AI tự chạy nền/chống trùng bền vững. Tiếp tục ghi chú/giá/tạo đơn qua thao tác tích Miễn phí giao hàng bằng tay và năm công tắc cũ. Không sửa quy tắc này ngầm.
+
+Phải khởi động lại helper để nhận prompt/schema địa chỉ mới, reload extension + tab Pancake + trang AI, đăng nhập lại. DOM old/new và catalog đã đối chiếu ngày 10/10/2026; 6 ca fixture Chrome đạt. Tool không được thao tác chrome-extension:// nên lượt địa chỉ/điền qua extension thật cần người dùng kiểm chứng. README.md và PROJECT_HANDOFF.md mô tả kiến trúc hiện tại; các phần 0.6/0.5 và đề xuất Gemini bên dưới là lịch sử.
+
 ## Tiến độ mới: 0.6.0 — hội thoại Pancake thật
 
 Đã thêm đọc chat hiện đang tải trong DOM bằng message tới content script, preview có thể sửa và kiểm tra dữ liệu không đổi trước/sau AI. Bộ chọn vai trò/nội dung được đối chiếu trực tiếp ngày 09/10/2026. Có lọc thông tin liên hệ/địa chỉ cơ bản; cần người dùng duyệt phần còn sót. Tài khoản Plus và mẫu đã được người dùng xác nhận hoạt động ở 0.5.1. Lượt phân tích từ DOM thật cần người dùng bấm vì công cụ browser chặn trang chrome-extension://. Chưa điền SKU/đơn, chưa tự đọc toàn bộ lịch sử. Bước sau: đánh giá intent/kg từ hội thoại thật, rồi ánh xạ danh mục sản phẩm.

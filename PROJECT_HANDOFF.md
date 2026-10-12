@@ -1,6 +1,38 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 09/10/2026. Phiên bản manifest: `0.6.0`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
+Cập nhật: 13/10/2026. Phiên bản manifest: `0.9.3`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
+
+## Sửa mở nhắn riêng comment 0.9.3
+
+Lỗi thực tế: comment-body-text dùng <br> giữa hai dòng. textContent ghép “🥰Anh/chị” trong khi composer có xuống dòng, khiến includes(sentText) thất bại và không chạy bước mở box. Nay dùng innerText để đối chiếu văn bản hiển thị. Không bỏ điều kiện composer trống + comment shop ID mới.
+
+Mở box bằng nút .comment-action-btn trong root message_<selectedKey>, có SVG path bắt đầu M128,24A104 và chứa 84,140; đây là nút bong bóng ba chấm của comment khách, đã bấm trên Pancake thật và xác nhận mở đúng modal #previewReplyInput như Alt+B. Không dùng nút Trả lời nhanh ở reply_box. Bỏ phím giả lập để tránh phụ thuộc shortcut/focus. Chỉ bấm một lần sau thành công, không tự gửi nội dung. Các guard, giữ nháp và công tắc vẫn áp dụng.
+
+GitNexus repo PancakeExtensionPro: index chậm 1 commit, impact file/test/fixture UNKNOWN; query không có flow mới. Đối chiếu manifest và test/fixture xác nhận nơi nạp trước sửa. 19 kiểm thử Node đạt, Chrome fixture tái hiện <br> làm textContent dính hai dòng và xác nhận box nhận '/'. Không gửi comment thật để thử. Tool không reload extension đang cài; người dùng reload extension và tab để nạp 0.9.3.
+
+## Lịch sử hỗ trợ trả lời comment 0.9.2
+
+`comment-followup.js` nạp sau comment-reply.js; dùng chung autoCommentReply/uiRecording. Capture click trusted ở #messageCol #reply_box .new-reply-box-btn có send SVG path bắt đầu M240,127.89 (đối chiếu DOM thật). Lưu khóa hội thoại, text gửi và các ID comment shop trước thao tác. Chờ tối đa 8 giây: selected key giữ nguyên, composer trống và có comment shop ID mới chứa text đã gửi. Sau đó dispatch keydown/keyup Alt+B (key/code/keyCode/which), chờ textarea #previewReplyInput visible, focus và native setter '/' + input/change. Không gọi nút gửi hoặc Enter. Draft riêng đang có nội dung giữ nguyên. Click/input/keydown trusted, tắt tính năng/ghi nhận hoặc đổi selected key hủy. Hiện chỉ bắt nút gửi comment, chưa bắt gửi bằng bàn phím.
+
+Đối chiếu Pancake thật: Alt+B mở modal nhắn riêng, #previewReplyInput nhận '/', đã xóa ký tự thử và đóng modal, giữ nguyên comment draft. Không gửi comment/tin riêng thật để thử. Synthetic Alt+B được kiểm thử trong fixture; không reload extension đang cài vì công cụ chặn chrome-extension://. 4 ca followup Node + 7 ca comment Node đạt; Chrome fixture bấm gửi mô phỏng → Alt+B → '/' đạt. Popup.html/CSS thật được render qua localhost (bỏ popup.js cho preview), 7 hàng có mô tả nằm trong chiều cao, không overlap. CSS .feature dùng padding/border-bottom chung, checkbox không co và min-width 0 cho text. Tải lại extension/Pancake để nạp mã mới.
+
+### Nhận diện comment từ 0.9.1
+
+Đối chiếu lại trên comment Hant Ha: bộ chọn SVG 0.9.0 vẫn true, nên không kết luận icon là nguyên nhân. Row .list-tags-conv có class list_tags_conv_<postId>_<rootCommentId>; comment root trong #messageCol có id message_<postId>_<rootCommentId> và class comment-message-ele. Bản 0.9.1 bỏ gate SVG, tham chiếu row DOM và so sánh node/text cũ. `conversationKey()` lấy khóa bằng regex số_số từ class list-tags-conv. Mỗi lần chờ đọc lại selected row cùng khóa và document.getElementById(message_key), yêu cầu node matches #messageCol .comment-message-ele. Không cần post-module visible; không đoán comment từ tên khách hoặc một icon không rõ. Inbox cùng khóa có inbox-message-ele nên không điền. Nếu thiếu khóa/root thì hết hạn và giữ form. Không dùng nội dung tin nhắn để nhận diện.
+
+Impact comment-reply.js/fixture/tests UNKNOWN vì chưa index; xác minh manifest, test VM và fixture là nơi nạp bằng nguồn. Chưa kiểm chứng toàn bộ bản mới trong extension đang cài vì công cụ chặn chrome-extension://. Đã tái hiện bản cài bấm selected comment không điền; xác nhận selector và khóa trên DOM thật. 7/7 Node đạt, thêm ca thay node row. Chrome fixture thay row mỗi click và tái dùng comment root: điền đúng; click lại với root không đổi vẫn điền; giữ draft; inbox không điền. Không gửi tin/comment thật.
+
+### Lịch sử 0.9.0 (đã thay điều kiện nhận diện ở 0.9.1)
+
+`comment-reply.js` chạy riêng, không sửa content.js. Công tắc `autoCommentReply` mặc định false trong popup. Khi bấm .conversation-list-item có biểu tượng comment (.tag-wrap svg path bắt đầu M232,128A104, đối chiếu thực tế), chờ row selected, #messageCol .post-module và .comment-message-ele cùng #replyBoxComposer visible. Chuyển row cần node/nội dung comment đổi để không điền vào khung cũ khi React đang tải. Chờ tối đa 4 giây, polling 50ms, generation/cancel hủy timer khi click khác, input/keydown trusted, tắt công tắc hoặc ghi nhận UI. Không điền lúc vừa bật công tắc hoặc lúc nạp trang.
+
+Composer textarea dùng native value setter + input/change để React nhận bản nháp. Không focus, không Enter, không gọi nút gửi/API. Ô có text, disabled/readOnly bị bỏ qua. Mẫu đúng hai dòng trong README, không tự kiểm tra/gửi inbox. Chỉ hỗ trợ comment Facebook nhận diện theo icon + vùng bài viết; nếu Pancake đổi icon/selector cần đối chiếu lại, không suy đoán mọi row là comment.
+
+Graph query đã kiểm tra luồng hội thoại; impact popup.js UNKNOWN/index chậm 1 commit nên xác minh popup.html và storage trực tiếp. Module mới được manifest nạp, không có caller cũ. 6/6 kiểm thử comment-reply.test.cjs đạt (text/events, inbox/recording, draft, timeout, cancel, click nhanh). Chrome fixture xác nhận điền hai dòng, giữ draft và bỏ qua inbox. `tests/comment-serve.cjs` cổng 8768, /multi_pages; không kết nối khách. Tool chặn chrome-extension:// nên người dùng reload extension/Pancake để nạp bản thực. Không gửi comment thật khi kiểm thử. Dark mode vẫn đã gỡ.
+
+## Gỡ Dark mode 0.8.2
+
+Người dùng yêu cầu gỡ tính năng. Đã xóa công tắc popup, script/CSS trong manifest và các file dark-mode cùng fixture/ảnh xem trước. Không còn sử dụng khóa pancakeDarkMode cũ trong storage. Tải lại extension và tab Pancake để gỡ CSS/script đã nạp từ phiên bản trước. Impact graph UNKNOWN; đối chiếu manifest/popup/fixture trực tiếp trước khi xóa. Các tính năng Pancake/POS/AI giữ luồng hiện có.
 
 ## Cấu trúc dự án
 
@@ -9,7 +41,10 @@ Cập nhật: 09/10/2026. Phiên bản manifest: `0.6.0`. Đây là extension Ch
 | `manifest.json` | Tên, mô tả, quyền, khai báo content scripts và popup. Nạp `product-summary.js`, `pricing.js` trước `content.js`. |
 | `popup.html`, `popup.css`, `popup.js` | Popup hai mục Pancake/POS Cake. Năm công tắc Pancake, công tắc AI Beta và công tắc POS; lưu lựa chọn vào `chrome.storage.local`. |
 | `AI_BETA_PLAN.md` | Đánh giá, lịch sử và bước tiếp theo sau kết nối ChatGPT. |
-| `ai-beta.html/js/css` | Trang đăng nhập và thử phân tích chat mẫu, không đọc chat trực tiếp. |
+| `ai-beta.html/js/css` | Trang đăng nhập, xem trước chat thật/mẫu, phân tích và chủ động điền đơn nháp. |
+| `ai-order-plan.js`, `ai-order-plan.test.cjs` | Schema địa chỉ, đối chiếu hành chính duy nhất, ánh xạ loại sản phẩm/quy cách SKU. Dùng cả Node và content script. |
+| `ai-order-dom.js` | Adapter DOM điền tỉnh/huyện/xã, địa chỉ chi tiết, SĐT tại máy và SKU/số lượng; không gửi đơn. |
+| `tests/ai-draft-fixture.html/js`, `tests/ai-serve.cjs` | Kiểm thử DOM trong Chrome bằng dữ liệu mô phỏng, cổng 8766. |
 | `ai-bridge.cjs`, `ai-protocol.cjs`, `ai-protocol.test.cjs` | Helper OAuth localhost, parser/kiểm tra và kiểm thử bằng tài khoản mô phỏng. |
 | `content.js` | Nghe sự kiện trên trang, tự động mở form, điền ghi chú, tùy chọn tạo đơn và chuẩn hóa tag. |
 | `product-summary.js` | Hàm thuần `summarizeProducts(products)`; chạy trong content script và cũng xuất CommonJS để thử bằng Node. |
@@ -24,7 +59,47 @@ Cập nhật: 09/10/2026. Phiên bản manifest: `0.6.0`. Đây là extension Ch
 
 Không cần `npm install`. Chrome nạp trực tiếp các file extension; Node cần cho kiểm thử và helper kết nối ChatGPT.
 
-## AI tự lên đơn — Beta (0.6.0)
+## AI tự lên đơn — Beta (0.7.4)
+
+### Hoàn thiện và kiểm thử 0.7.4
+
+`searchCatalog()` chờ sản phẩm đúng loại xuất hiện (tối đa 8 giây), rồi mới ổn định/quét danh mục. `addSku()` chờ đúng tên + mã mẫu mã trên popup hiện tại, không ngủ cố định 500ms rồi kết luận thiếu SKU; nhiều lựa chọn cùng danh tính bị từ chối. `quantityInput()` chịu được khoảng trống lúc React thay dòng. Các điểm chờ vẫn gọi guard `current()` để hủy khi người dùng đổi hội thoại/thao tác.
+
+`matchRegion()` trả mã lỗi REGION_NOT_FOUND/REGION_AMBIGUOUS. `selectAddress()` thử hệ cũ trước theo AI; chỉ khi REGION_NOT_FOUND mới thử hệ mới với cùng province/commune. Từng cấp chờ tối đa 6 giây và chỉ chọn equality duy nhất; không fallback khi trùng tên, tác vụ bị hủy hoặc lỗi điều khiển. Không đổi tên địa danh hay đoán huyện. Hàm trả `{region, system}`; `applyDraft()` trả thêm `addressSystem`, trang AI hiển thị hệ đã dùng. Chi tiết trống không tạo dấu phẩy đầu chuỗi hoặc chữ null. Thông báo khởi động lại helper chỉ xuất hiện khi đề xuất thiếu delivery.
+
+Đối chiếu ngày 12/10/2026 trên Pancake đăng nhập: hệ mới có Phường Chánh Hưng thuộc Hồ Chí Minh (168 lựa chọn xã/phường trong DOM). Chat có quận cũ nên AI có thể nhận old, mặc dù xã thuộc new; fallback giải quyết sự lệch hệ bằng danh mục. Shop cam có CAM4/CAM5 TikTok và CAM1/CAM2 thường; ánh xạ tên chính xác chọn CAM2 thường. Thử thêm CAM2 trên form trống, đổi số lượng 2, xác nhận tổng 750.000đ; đã xóa dòng thử, xác nhận 0 dòng/0đ và giữ thông tin khách. Không tạo đơn thật, không thay công tắc, không tự tích Miễn phí giao hàng.
+
+GitNexus impact đã chạy trước sửa các symbol adapter/plan/UI, trả UNKNOWN do các file AI chưa nằm trong index. Đã kiểm tra caller bằng nguồn: validate/adapter dùng matchRegion, applyDraft dùng searchCatalog/selectAddress/addSku, chat-content gọi applyDraft, ai-beta nhận kết quả. UNKNOWN không được tính là không có tác động. Không commit trong lượt này.
+
+38/38 kiểm thử Node, 12/12 ca AI DOM Chrome và 15/15 ca Pancake cũ Chrome đạt; cú pháp content/popup/adapter/plan/UI/chat-content/fixture đạt. Chi tiết tại [báo cáo kiểm thử](docs/TEST_REPORT_2026-10-12.md). Tool chặn chrome-extension:// nên không reload extension hoặc chạy lượt AI thật qua trang extension trong kiểm thử này; không tuyên bố đã kiểm chứng phần đó. Nâng 0.7.x lên 0.7.4 chỉ reload extension/Pancake và mở lại trang AI, giữ helper/đăng nhập.
+
+### Sửa điều kiện địa chỉ — 12/10/2026
+
+Người dùng yêu cầu địa chỉ cũ chỉ cần province/district/commune, mới chỉ cần province/commune. `validateDraft()` bỏ bắt buộc detail (null chuẩn hóa thành chuỗi rỗng để adapter không điền chữ null); new bỏ district dư bằng null. Bỏ vòng kiểm tra tên hành chính phải xuất hiện nguyên văn trong evidence: ảnh khách ghi `tphcm` nhưng AI trả `Thành phố Hồ Chí Minh`, nên bị chặn sai dù đủ cấp. Cho phép AI chuẩn hóa/diễn giải địa danh; `selectAddress()` vẫn đối chiếu tên duy nhất trong catalog old/new, không sửa selector hay luồng DOM. Giữ kiểm tra evidence nằm trong transcript, bằng chứng số nhà nếu có, dữ liệu bị ẩn, ý định chốt và sản phẩm. Tác động validateDraft: trang AI bật nút Điền đơn, chat-content kiểm tra message và applyDraft kiểm tra trước điền. Impact UNKNOWN vì AI chưa được index; các caller được xác minh qua nguồn. Hồi quy đúng địa chỉ trong ảnh và thiếu từng cấp old/new: thất bại trước sửa, đạt sau sửa; 38/38 ca Node và cú pháp content/popup/plan/adapter đạt. Không chạy inference hay tạo đơn thật trong lượt này. Nâng lên 0.7.3 chỉ reload extension/Pancake/trang AI, giữ helper và phiên đăng nhập.
+
+### Luồng mới nhất — 10/10/2026
+
+Kiểm chứng 0.7.2: 36/36 ca Node và 8/8 ca Chrome mô phỏng đạt; cú pháp `content.js`, `popup.js`, hai module AI và fixture đạt. Ca hai nhãn mã đã thất bại trước sửa (`MSS 02MSS02`) và đạt sau sửa (`MSS02`). Lượt extension thật sau reload cần người dùng chạy vì giới hạn tool nêu bên dưới.
+
+Sửa 0.7.2 theo ảnh danh mục người dùng: thêm alias chính xác `cam ron loi khong hat`/`cam ron loi khong hat moc chau`; chuẩn hóa tiền tố `^\(\s*\d{4}\s*\)\s*`. Regex miến đã nhận `Miến Sợi Nhỏ/To` thiếu chữ Sâm, giữ ánh xạ cùng nhóm nhỏ/to. Các tên mẫu: cam 3/5kg CAM1/CAM2; miến nhỏ 1kg MSS04, 2kg MSS08; miến to 1/2/3kg MSS01/MSS02/MSS03. DOM shop đang đăng nhập còn có MS004 và `(2026 ) 2Kg Miến Sâm Sợi Nhỏ`; mã khác nhau theo shop nên không hardcode. `skuData()` từng đọc toàn bộ `.variation-id`, ghép nhãn sản phẩm `MSS 02` với mẫu mã `MSS02` thành `MSS 02MSS02`, đã tái hiện lỗi tìm lại SKU trong Chrome. Nay lấy riêng `.variation-id .tag-custom-id-variation` (class đối chiếu DOM thật); chỉ fallback text khi tối đa một nhãn, từ chối nếu nhiều mã mẫu mã khác nhau. Tác động: `productKind` dùng bởi validate/gộp/chọn SKU; `skuData` dùng bởi quét catalog và `addSku` trong `applyDraft`. Impact UNKNOWN do AI chưa được index, đã xác minh tham chiếu nguồn. 36 kiểm thử Node; fixture 8 ca gồm tên đầy đủ, hai nhãn mã và khoảng trắng năm. Giữ helper cũ, chỉ reload extension/Pancake/trang AI.
+
+Sửa 0.7.1: đối chiếu DOM shop thật thấy `3Kg Khoai Sọ Mán Mộc Châu [KH1]` và `5Kg Khoai Sọ Mán Mộc Châu [KH2]`; tìm KH2 trả đúng một lựa chọn. `productKind()` cũ chỉ chấp nhận `khoai so`/`khoai so man`, trả null cho hậu tố Mộc Châu nên `chooseSku()` loại cả hai, dừng tại catalog. Thêm alias chính xác `khoai so man moc chau`, không đổi sang substring và vẫn từ chối combo/loại khoai khác hoặc kg không chia hết. Alias dùng chung cho kiểm tra đề xuất, gộp loại và chọn SKU. Không sửa luồng DOM hay helper. Impact GitNexus trả UNKNOWN vì các hàm AI chưa có trong index; đã xác minh tham chiếu trong `validateDraft`, `chooseSku`, `applyDraft` bằng nguồn. Kiểm thử hồi quy dùng tên/mã KH1/KH2 thật; fixture cam/khoai cũng dùng danh mục Mộc Châu. 35 kiểm thử Node đạt; giữ giới hạn không tạo đơn thật để thử.
+
+Người dùng đã xác nhận OAuth và phân tích sản phẩm trong hội thoại thật hoạt động. Bản 0.7.0 thêm `delivery` gồm `detail`, `province`, `district`, `commune`, `system: old|new|null`, `evidence`; trường thiếu là null. Prompt giữ địa chỉ khách chốt mới nhất, tách lời mua hàng/SĐT khỏi chi tiết, không đoán hoặc tự chuyển địa danh sau sáp nhập. `parseProposal()` giữ schema cũ để không làm hỏng kiểm tra kết nối, nhưng `validateDraft()` từ chối điền nếu thiếu delivery đầy đủ hoặc bằng chứng không nằm trong bản xem trước. Khách hỏi giá/hủy/chưa rõ không được điền.
+
+`include-address` mặc định bật; `pap-read-chat` truyền `includeAddress:true` để giữ địa chỉ trong preview. Bản preview được gửi lên OpenAI chỉ khi bấm Phân tích. SĐT/email/link vẫn lọc; `collectMessages()` đọc SĐT khách mới nhất tại máy vào `contactPhone`, không trả trường đó hay chữ ký raw cho trang AI. Nhiều số trong tin khách gần nhất làm dừng điền. Chưa đọc ảnh/voice hoặc lịch sử ngoài DOM. Biên 8.000 ký tự vẫn giữ.
+
+Trang AI lưu kết quả trong bộ nhớ, kiểm tra bản preview chưa bị sửa, snapshot chat trước/sau inference, rồi bật **Điền đơn trên Pancake** cho hội thoại thật có đủ dữ liệu. `pap-apply-draft` chỉ nhận sender cùng extension, Beta bật, ghi nhận UI tắt, cùng snapshot chưa dùng. Snapshot được đánh dấu used trước thao tác và không retry tự động; không dùng lại sau một phần thất bại. Bấm tay/nhập tay trong lúc điền, đổi row/tin/path, tắt Beta hoặc bật ghi nhận đều dừng ở điểm chờ tiếp theo. Không có khóa chống đơn trùng bền vững qua reload; chưa chạy nền tự động.
+
+`ai-order-dom.js` mở Tạo mới; form có dòng sản phẩm bị từ chối. Quét danh mục trước khi ghi địa chỉ, tìm miến bằng **2026**, cam bằng **cam rốn lồi**, khoai bằng **khoai sọ mán**. `productKind()` chuẩn hóa Miến Sâm (Đất) to/nhỏ và hai ánh xạ cam/khoai do người dùng chỉ định. `chooseSku()` ưu tiên quy cách đúng kg, rồi 1kg, rồi quy cách lớn nhất chia hết kg; yêu cầu đúng một SKU tại mức ưu tiên, không chọn đầu tiên tùy ý hoặc tối ưu theo giá. Kg trong tên × số lượng phải bằng kg đề xuất. Catalog virtual được cuộn tới cuối, giới hạn 100 bước và từ chối khi không quét đủ. Sau đó chọn chế độ hành chính old/new và lần lượt tỉnh/huyện/xã (new bỏ huyện), đối chiếu tên không dấu/tiền tố bằng equality duy nhất; không dùng substring/fuzzy. Điền chi tiết, SĐT mới nhất tại máy (hoặc giữ SĐT hợp lệ trên form khi chat không có), thêm từng SKU và số lượng, xác nhận tên/số lượng/aria-valuenow. Có thể để lại một phần form nếu lỗi; không xóa hay rollback thông tin khách tự sửa.
+
+DOM đã đối chiếu trực tiếp ngày 10/10/2026: `.customer-province input`, `.popup-select-address input[value="old"|"new"]`, `[data-node-key="province"|"district"|"commune"] [role="tab"]`, `.ant-tabs-tabpane-active .ant-select-item-option`; new chỉ có province/commune. Catalog `.ul-result-product .li-variation`, `.product-name .div-name`, `.variation-id`, `.rc-virtual-list-holder`; dòng nháp/số lượng dùng selector hiện có. Từ khóa 2026 trả MS004/MSS01/MSS02/MSS03 trên shop đang mở; không hardcode các mã đó. Dùng native setter + input/change/blur. Sự kiện riêng `pap-ai-draft-start` hủy các tác vụ opener/note/price/submit cũ, không đổi công tắc.
+
+AI chỉ điền đơn nháp. Người dùng xem lại và tích Miễn phí giao hàng để chạy năm tính năng cũ (kể cả tùy chọn Tự tạo đơn). Không tự tích checkbox hoặc tự bấm Tạo đơn trong adapter AI. Muốn tự động hoàn toàn tiếp theo cần thiết kế chống trùng qua reload, gate giá/ghi chú và xác nhận đơn thành công.
+
+Nâng từ 0.6.x lên 0.7.0 phải restart helper Node và đăng nhập lại vì thay schema địa chỉ. Nâng 0.7.0/0.7.1 lên 0.7.2 chỉ reload extension + tab Pancake + đóng/mở trang AI; giữ helper và phiên đăng nhập. Kiểm tra `node --check ai-order-dom.js`, `node --check ai-order-plan.js`, `node --check ai-beta.js`, `node --check chat-content.js` và các gate cũ. Chạy `node --test ai-order-plan.test.cjs chat-reader.test.cjs chat-content.test.cjs ai-protocol.test.cjs ai-transport.test.cjs product-summary.test.js pricing.test.js`. Fixture: `node tests/ai-serve.cjs` → http://127.0.0.1:8766 → Chạy kiểm thử. Fixture hiện có 8 ca Chrome: old/new, cam/khoai, hai nhãn mã, khoảng trắng năm, SKU trùng, form có hàng, hủy giữa chừng. Không tạo đơn thật để thử. Tool trình duyệt chặn chrome-extension://, nên lượt inference địa chỉ + nút điền qua extension thật cần người dùng kiểm chứng sau reload; không dùng cách vòng để vượt policy.
+
+### Lịch sử AI 0.6.0 và 0.5.x (khả năng tại từng mốc)
 
 Phiên bản mới nhất 0.6.0 thêm `chat-reader.js`/`chat-content.js` trong content script Pancake. Bộ chọn đã đối chiếu trên trang đăng nhập ngày 09/10/2026: `.message-list.media-list-conversation .inbox-message-ele`, vai trò `.media-current-customer`/`.media-current-user`, văn bản `.media-body .message-text-ele`. `buildTranscript()` lọc điện thoại/email/link/dòng địa chỉ thường gặp và thông báo media/unknown; không khẳng định đầy đủ hoặc ẩn danh tuyệt đối. `collectMessages()` từ chối >8.000 ký tự, không tự cắt/cuộn. Các message `pap-read-chat`/`pap-check-chat` chỉ chấp nhận sender.id đúng extension và Beta bật; snapshot giữ row DOM + chữ ký nội dung tại máy, không ghi storage. Trang AI gửi tabs.sendMessage, cho sửa bản xem trước, kiểm tra snapshot trước và sau inference. Không đổi helper/cloud request hoặc năm luồng lên đơn cũ. Chạy thêm `node --test chat-reader.test.cjs ai-transport.test.cjs`. Tool trình duyệt bị policy chặn chrome-extension:// nên người dùng thực hiện lượt inference trực tiếp; không tuyên bố đã kiểm thử lượt đó nếu chưa có kết quả.
 

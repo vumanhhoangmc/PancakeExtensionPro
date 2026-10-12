@@ -89,6 +89,13 @@ test('AI output must have valid intent and positive kg', () => {
   assert.throws(() => parseProposal(JSON.stringify({ ...proposal, intent: 'run_script' })));
   assert.throws(() => parseProposal(JSON.stringify({ ...proposal, items: [{ ...proposal.items[0], kg: -1 }] })));
 });
+test('Address output is preserved and validated; legacy helper output cannot fill draft',()=>{
+  const delivery={system:'old',detail:'UBND',province:'Hải Phòng',district:'Ngô Quyền',commune:'Đông Khê',evidence:'về UBND'};
+  const proposal={intent:'confirmed',items:[],delivery};
+  assert.deepEqual(parseProposal(JSON.stringify(proposal)).delivery,delivery);
+  assert.equal(parseProposal(JSON.stringify({...proposal,delivery:null})).delivery,null);
+  assert.throws(()=>parseProposal(JSON.stringify({...proposal,delivery:{...delivery,system:'guess'}})));
+});
 
 test('Bridge accepts only configured extension origin and never exchanges invalid callbacks', async () => {
   let calls = 0;

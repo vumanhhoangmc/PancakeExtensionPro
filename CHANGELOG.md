@@ -1,5 +1,86 @@
 # Lịch sử phát triển
 
+## 0.9.3 — 13/10/2026
+
+- Sửa lỗi không mở hộp nhắn riêng sau gửi comment: đọc innerText để nhận đúng comment hai dòng có thẻ br.
+- Dùng nút nhắn riêng của comment khách mở đúng hộp Alt+B, rồi điền '/'; bỏ shortcut giả lập.
+- 19 kiểm thử Node đạt; Chrome fixture với br đạt; đối chiếu nút mở modal trên Pancake thật, không gửi comment thật.
+
+## 0.9.2 — 13/10/2026
+
+- Khi người dùng bấm Gửi comment và thấy comment mới xuất hiện, tự mở Alt+B và điền '/' vào khung nhắn riêng.
+- Không tự gửi tin riêng; giữ nháp riêng có sẵn và hủy khi người dùng chuyển hội thoại/thao tác.
+- Sửa khoảng cách từng mục popup, chiều cao mô tả và vị trí công tắc.
+- 11 kiểm thử comment/followup Node, luồng Chrome mô phỏng và bố cục 7 mục đạt. Đối chiếu Alt+B và ô nhập trên Pancake thật, không gửi tin thật.
+
+## 0.9.1 — 13/10/2026
+
+- Bỏ nhận diện theo SVG; xác nhận bằng khóa list_tags_conv và ID message cùng khóa có class comment-message-ele trong vùng chat.
+- Không phụ thuộc row DOM giữ nguyên hoặc comment đổi nội dung; hỗ trợ React thay node/tái dùng root.
+- 7 ca Node và 4 tình huống Chrome mô phỏng đạt; đối chiếu khóa comment/inbox trên giao diện thật.
+
+## 0.9.0 — 13/10/2026
+
+- Thêm công tắc Hỗ trợ trả lời comment, mặc định tắt.
+- Khi mở hội thoại comment, điền mẫu hai dòng vào ô trả lời trống; không tự gửi.
+- Bỏ qua Messenger và draft có sẵn; hủy khi thao tác tay, đổi hội thoại, tắt công tắc hoặc ghi nhận UI.
+- Đối chiếu DOM comment thật, 6 ca Node và 3 tình huống Chrome mô phỏng đạt.
+
+## 0.8.2 — 12/10/2026
+
+- Gỡ Dark mode theo yêu cầu người dùng: công tắc, content script, CSS và fixture riêng.
+- Tải lại extension và tab Pancake để bỏ giao diện tối đã nạp từ phiên bản trước.
+
+## 0.8.1 — 12/10/2026
+
+- Làm lại palette theo pixel ảnh Facebook: chat #242526, input #333334, tin khách #303030, tin shop #1a5ff7.
+- Sửa thẻ đính kèm xanh nhạt, viền trắng và header navy còn sót; tăng khả năng đọc icon tối.
+- Thanh tag và nhãn hội thoại dùng màu xám dịu; tag đã chọn phân biệt bằng xanh xám và dấu chọn gốc.
+- Tắt dark mode gỡ cả marker border; không sửa dữ liệu đơn/tag.
+
+## 0.8.0 — 12/10/2026
+
+- Thêm Dark mode trong mục Pancake, mặc định tắt và lưu lựa chọn riêng.
+- Nền xám tối, chữ sáng, bong bóng shop xanh theo phong cách Facebook; hỗ trợ ô nhập và bảng nổi mới xuất hiện.
+- Giữ ảnh/video và màu tag; tắt khôi phục giao diện sáng, không đổi dữ liệu form. CSS không áp dụng bản in hoặc POS Cake.
+- Đối chiếu selector trên Pancake thật; kiểm tra bật/tắt và bảng động bằng fixture Chrome. Reload extension/tab Pancake để nạp bản mới.
+
+## 0.7.4 — 12/10/2026
+
+- Chờ danh mục và đúng SKU theo trạng thái DOM khi mạng/giao diện tải chậm; bỏ chờ cố định lúc chọn SKU.
+- Nếu AI nhận hệ cũ nhưng thiếu địa danh, đối chiếu lại cùng tên tỉnh/xã ở hệ mới; chỉ chọn tên khớp duy nhất, dừng khi trùng.
+- Kết quả điền hiển thị hệ địa chỉ thực tế; địa chỉ không có số nhà không chèn null hoặc dấu phẩy thừa.
+- 38/38 Node, 12/12 AI DOM Chrome, 15/15 Pancake cũ Chrome đạt. Đối chiếu địa chỉ và SKU/số lượng trên form thật; đã dọn dòng thử, không tạo đơn thật.
+- Reload extension/Pancake/trang AI; giữ helper và phiên đăng nhập. Báo cáo: docs/TEST_REPORT_2026-10-12.md.
+
+## 0.7.3 — 12/10/2026
+
+- Địa chỉ cũ cần tỉnh/huyện/xã, mới cần tỉnh/xã; số nhà/đường không còn bắt buộc, bỏ huyện dư ở hệ mới.
+- Bỏ yêu cầu tên hành chính nguyên văn trong chat để chấp nhận AI chuẩn hóa viết tắt như tphcm. Vẫn đối chiếu danh mục Pancake khi điền.
+- Thêm hồi quy địa chỉ trong ảnh và các trường hợp thiếu cấp; 38 ca Node đạt. Giữ helper và phiên đăng nhập.
+
+## 0.7.2 — 10/10/2026
+
+- Nhận tên Cam Rốn Lồi Không Hạt Mộc Châu và tiền tố năm `(2026 )`; kiểm thử tên Miến Sợi Nhỏ thiếu chữ Sâm theo danh mục người dùng.
+- Sửa đọc hai nhãn mã: lấy riêng mã mẫu mã, tránh tìm từ khóa sai `MSS 02MSS02`.
+- Danh mục mô phỏng dùng đủ tên/quy cách người dùng cung cấp, thêm hai ca Chrome cho hai nhãn mã và khoảng trắng năm. Không cố định SKU theo một shop.
+- Reload extension/Pancake/trang AI; giữ helper và đăng nhập.
+
+## 0.7.1 — 10/10/2026
+
+- Sửa dừng ở bảng tìm khoai: nhận tên Khoai Sọ Mán Mộc Châu đúng như danh mục shop, dùng alias chính xác để không lẫn sản phẩm/combo khác.
+- Đối chiếu DOM catalog và tìm theo mã KH2 trên Pancake; thêm hồi quy KH1/KH2, số lượng 3/5/6/10kg và từ chối quy cách 4kg không có.
+- Fixture dùng tên khoai thật. Chỉ cần reload extension/Pancake/trang AI; helper 0.7.0 và đăng nhập giữ nguyên.
+
+## 0.7.0 — 10/10/2026
+
+- AI nhận diện địa chỉ giao hàng mới nhất cùng sản phẩm/kg, yêu cầu bằng chứng và giữ trường thiếu để xem lại.
+- Thêm lựa chọn đọc địa chỉ trong preview và nút Điền đơn trên Pancake; SĐT dùng điền chỉ giữ tại máy.
+- Đối chiếu tỉnh/huyện/xã old/new và SKU theo danh mục shop; miến tìm 2026, cam → Cam rốn lồi, khoai sọ → Khoai sọ mán.
+- Form có sản phẩm/SKU trùng/dữ liệu thiếu bị từ chối, hủy khi đổi hội thoại/tin/Beta hoặc thao tác tay; kết quả đã dùng không retry.
+- Giữ bước tích Miễn phí giao hàng bằng tay và công tắc tạo đơn hiện có. Adapter AI chỉ điền nháp.
+- Đối chiếu DOM thật, thêm kiểm thử schema/mapping/race và 6 ca Chrome mô phỏng. Lượt extension thật cần người dùng kiểm chứng vì tool chặn chrome-extension://.
+
 ## 0.6.0 — 09/10/2026
 
 - Thêm chọn tab và đọc hội thoại Pancake vào bản xem trước trên trang AI.

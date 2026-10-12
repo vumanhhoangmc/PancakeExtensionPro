@@ -1,0 +1,19 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+function setup({previewText='',comment=true}={}){
+  let selected='123_456',now=0,seq=0,preview=null,storageListener;const jobs=new Map(),listeners={},keyboard=[],outgoing=[];
+  class Element{getBoundingClientRect(){return {width:100,height:20};}matches(){return comment;}}
+  class Textarea extends Element{get value(){return this._value||'';}set value(v){this._value=v;}focus(){}dispatchEvent(e){this.events.push(e.type);}}
+  const composer=new Textarea();composer.events=[];composer.value='Lời comment';
+  const button=new Element();button.querySelector=()=>({});const target=new Element();target.closest=()=>button;
+  const row={querySelector:()=>({className:'list_tags_conv_'+selected+' list-tags-conv'})};
+  const privateButton=new Element();privateButton.classList={contains:()=>false};privateButton.click=()=>{keyboard.push('private-action');preview=new Textarea();preview.events=[];preview.value=previewText;};
+  const root=new Element();root.querySelector=()=>privateButton;
+  const document={body:{},addEventListener(t,fn){listeners[t]=fn;},getElementById:()=>root,querySelector(s){return s.includes('selected')?row:s.includes('previewReplyInput')?preview:s.includes('replyBoxComposer')?composer:null;},querySelectorAll(){return outgoing;}};
+  vm.runInNewContext(fs.readFileSync('comment-followup.js','utf8'),{document,Element,HTMLTextAreaElement:Textarea,location:{pathname:'/multi_pages',search:'',hash:''},KeyboardEvent:class{constructor(type,opts){this.type=type;Object.assign(this,opts);}},Event:class{constructor(type){this.type=type;}},Date:{now:()=>now},setTimeout(fn,ms){jobs.set(++seq,{fn,at:now+ms});return seq;},clearTimeout(id){jobs.delete(id);},chrome:{storage:{local:{get(_,fn){fn({autoCommentReply:true,uiRecording:false});}},onChanged:{addListener(fn){storageListener=fn;}}}}});
+  return {keyboard,composer,click(trusted=true){listeners.click({isTrusted:trusted,target});},complete(body={textContent:'Lời comment'}){composer.value='';outgoing.push({id:'new-comment',querySelector:()=>body});},change(){selected='123_999';},disable(){storageListener({autoCommentReply:{newValue:false}},'local');},type(){listeners.input({isTrusted:true});},preview:()=>preview,advance(ms=100){const end=now+ms;for(let i=0;jobs.size&&i<300;i++){const [id,j]=[...jobs].sort((a,b)=>a[1].at-b[1].at)[0];if(j.at>end)break;jobs.delete(id);now=j.at;j.fn();}now=end;}};
+}
+test('Only after user send succeeds: private action then slash input/change, no private send',()=>{const a=setup();a.click();a.advance();assert.equal(a.keyboard.length,0);a.complete();a.advance();assert.equal(a.preview().value,'/');assert.deepEqual(a.preview().events,['input','change']);assert.deepEqual(a.keyboard,['private-action']);});
+test('Pancake BR rendered reply matches multiline composer even though textContent joins lines',()=>{const a=setup();a.composer.value='Dòng một 🥰\nDòng hai';a.click();a.complete({textContent:'Dòng một 🥰Dòng hai',innerText:'Dòng một 🥰\nDòng hai'});a.advance();assert.equal(a.preview().value,'/');assert.deepEqual(a.keyboard,['private-action']);});
+test('Failed send, inbox or untrusted click never opens private reply',()=>{for(const config of [{},{comment:false}]){const a=setup(config);a.click();a.advance(9000);assert.equal(a.keyboard.length,0);}const a=setup();a.click(false);a.complete();a.advance();assert.equal(a.keyboard.length,0);});
+test('Conversation change, disabling feature and typing cancel followup',()=>{for(const action of ['change','disable','type']){const a=setup();a.click();a[action]();a.complete();a.advance();assert.equal(a.keyboard.length,0);}});
+test('Existing private draft is preserved',()=>{const a=setup({previewText:'Đang soạn riêng'});a.click();a.complete();a.advance();assert.equal(a.preview().value,'Đang soạn riêng');assert.deepEqual(a.preview().events,[]);});

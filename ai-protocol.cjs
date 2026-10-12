@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const { validateDelivery } = require('./ai-order-plan.js');
 
 function makeAttempt(hostId, redirectUri) {
   const random = () => crypto.randomBytes(32).toString('base64url');
@@ -62,6 +63,8 @@ function parseProposal(text) {
   for (const item of proposal.items) {
     if (typeof item.product !== 'string' || !item.product.trim() || !Number.isFinite(item.kg) || item.kg <= 0 || item.kg > 1000 || typeof item.evidence !== 'string') throw new Error('Sản phẩm/khối lượng AI chưa hợp lệ.');
   }
-  return { intent: proposal.intent, items: proposal.items.map(({ product, kg, evidence }) => ({ product, kg, evidence })) };
+  const result = { intent: proposal.intent, items: proposal.items.map(({ product, kg, evidence }) => ({ product, kg, evidence })) };
+  if (Object.hasOwn(proposal, 'delivery')) result.delivery = validateDelivery(proposal.delivery);
+  return result;
 }
 module.exports = { makeAttempt, validateCallback, verifyIdToken, readResponseStream, parseProposal };

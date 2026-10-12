@@ -28,3 +28,17 @@ test('Rejects missing DOM or empty text rather than analyzing another region', (
   assert.throws(()=>collectMessages({querySelector(){return null;}}));
   assert.throws(()=>collectMessages({querySelector(){return {querySelectorAll(){return [];}};}}));
 });
+test('Address mode preserves customer address while phones remain filtered',()=>{
+  const result=buildTranscript([{role:'customer',text:'UBND phường Đông Khê quận Ngô Quyền Hải Phòng cũ\n0915028970'}],{includeAddress:true});
+  assert.ok(result.text.includes('Đông Khê'));
+  assert.ok(result.text.includes('[SĐT đã ẩn]'));
+  assert.equal(result.text.includes('0915028970'),false);
+});
+test('Latest customer phone is local only, detects two recipient numbers',()=>{
+  const doc = texts => ({querySelector(){return {querySelectorAll(){return texts.map(text=>({id:'',classList:{contains(role){return role==='media-current-customer';}},querySelectorAll(){return [{innerText:text}];},querySelector(){return null;}}));}};}});
+  const one=collectMessages(doc(['0900000000','SĐT mới +84 900 000 001']),{includeAddress:true});
+  assert.equal(one.contactPhone,'0900000001');assert.equal(one.phoneConflict,false);
+  assert.equal(one.text.includes('900 000'),false);
+  const two=collectMessages(doc(['0900000000','0900000001 hoặc 0900000002']),{includeAddress:true});
+  assert.equal(two.contactPhone,null);assert.equal(two.phoneConflict,true);
+});

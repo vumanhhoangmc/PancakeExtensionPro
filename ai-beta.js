@@ -4,7 +4,16 @@ const command = `node ai-bridge.cjs ${chrome.runtime.id}`;
 element('start-command').textContent = command;
 let working = false;
 let liveChat = null;
+let analyzed = null;
+function clearDraft() {
+  analyzed = null; element('fill-draft').disabled = true; element('draft-status').textContent = '';
+}
+element('sample').addEventListener('input', clearDraft);
+element('pancake-tab').addEventListener('change', () => { liveChat = null; clearDraft(); });
+element('include-address').addEventListener('change', () => { liveChat = null; element('sample').value = ''; clearDraft(); element('chat-status').textContent = 'Đọc lại hội thoại với lựa chọn địa chỉ mới.'; });
 async function findPancakeTabs() {
+  if (working) return;
+  liveChat = null; clearDraft();
   const tabs = await chrome.tabs.query({ url: ['https://pancake.vn/multi_pages*', 'https://*.pancake.vn/multi_pages*'] });
   element('pancake-tab').replaceChildren(new Option('Chọn tab Pancake', ''));
   tabs.forEach((tab, index) => element('pancake-tab').add(new Option(`Hội thoại Pancake — tab ${index + 1}`, String(tab.id))));
@@ -18,10 +27,11 @@ async function checkLiveChat() {
 element('find-pancake').addEventListener('click', () => findPancakeTabs().catch(error => element('chat-status').textContent = error.message));
 element('read-pancake').addEventListener('click', async () => {
   if (working) return;
+  clearDraft();
   try {
     const tabId = Number(element('pancake-tab').value);
     if (!tabId) throw new Error('Chọn tab Pancake đang mở hội thoại trước.');
-    const result = await chrome.tabs.sendMessage(tabId, { type: 'pap-read-chat' });
+    const result = await chrome.tabs.sendMessage(tabId, { type: 'pap-read-chat', includeAddress: element('include-address').checked });
     if (!result?.ok) throw new Error(result?.error || 'Không đọc được hội thoại.');
     liveChat = { tabId, key: result.key };
     element('sample').value = result.text;
@@ -31,6 +41,7 @@ element('read-pancake').addEventListener('click', async () => {
 });
 element('use-sample').addEventListener('click', () => {
   if (working) return;
+  clearDraft();
   liveChat = null; element('sample').value = ''; element('result').textContent = '';
   element('chat-status').textContent = 'Đang nhập mẫu; không liên kết với hội thoại thật.';
 });
@@ -81,17 +92,38 @@ element('analyze').addEventListener('click', async () => {
   if (!aiAutoOrderBeta) { element('analysis-status').textContent = 'Bật AI tự lên đơn — Beta trong popup trước khi thử.'; return; }
   if (!element('model').value) { element('analysis-status').textContent = 'Đăng nhập và chọn model trước.'; return; }
   working = true; element('analyze').disabled = true; element('result').textContent = '';
+  clearDraft();
+  const transcript = element('sample').value;
   element('analysis-status').textContent = 'Đang phân tích bằng hạn mức ChatGPT…';
   try {
     await checkLiveChat();
-    const { proposal } = await callBridge('/analyze', { model: element('model').value, text: element('sample').value });
+    const { proposal } = await callBridge('/analyze', { model: element('model').value, text: transcript });
     await checkLiveChat();
     const current = await chrome.storage.local.get({ aiAutoOrderBeta: false });
     if (!current.aiAutoOrderBeta) throw new Error('Beta đã tắt. Đã bỏ kết quả này.');
+    if (element('sample').value !== transcript) throw new Error('Bản xem trước đã được sửa trong khi AI phân tích. Phân tích lại bản mới.');
     element('result').textContent = JSON.stringify(proposal, null, 2);
-    element('analysis-status').textContent = 'Đã phân tích. Đây là đề xuất AI chưa đối chiếu SKU; chưa tạo đơn.';
+    analyzed = { proposal, transcript, liveChat };
+    try {
+      PancakeAIOrderPlan.validateDraft(proposal, transcript);
+      element('fill-draft').disabled = !liveChat;
+      element('analysis-status').textContent = liveChat ? 'Đã xác định sản phẩm và địa chỉ. Xem lại đề xuất rồi bấm Điền đơn trên Pancake để đối chiếu danh mục shop.' : 'Đã phân tích mẫu. Đọc hội thoại thật để điền đơn trên Pancake.';
+    } catch (error) { element('analysis-status').textContent = `Đã phân tích; chưa thể điền đơn: ${error.message}${!proposal.delivery ? ' Nếu helper chưa hỗ trợ địa chỉ, khởi động lại helper bản mới.' : ''}`; }
   } catch (error) { element('analysis-status').textContent = error.message; }
   finally { working = false; element('analyze').disabled = false; }
+});
+element('fill-draft').addEventListener('click', async () => {
+  if (working || !analyzed?.liveChat || analyzed.transcript !== element('sample').value) return;
+  const selected = analyzed;
+  working = true; element('fill-draft').disabled = true; element('analyze').disabled = true;
+  element('draft-status').textContent = 'Đang đối chiếu địa chỉ, SKU và điền đơn trên Pancake…';
+  try {
+    await checkLiveChat();
+    const result = await chrome.tabs.sendMessage(selected.liveChat.tabId, { type: 'pap-apply-draft', key: selected.liveChat.key, proposal: selected.proposal, transcript: selected.transcript });
+    if (!result?.ok) throw new Error(result?.error || 'Không điền được đơn nháp.');
+    element('draft-status').textContent = `Đã điền đơn nháp: ${result.draft.products.map(p => `${p.name} × ${p.quantity}`).join(' + ')}. Địa chỉ${result.draft.addressSystem ? ` ${result.draft.addressSystem === 'new' ? 'mới' : 'cũ'}` : ''}: ${result.draft.address}. Mở Pancake xem lại, rồi tích Miễn phí giao hàng để chạy ghi chú/giá và tùy chọn tạo đơn hiện có.`;
+  } catch (error) { element('draft-status').textContent = `${error.message} Form có thể đã điền một phần; kiểm tra trước khi làm lại. Chưa bấm Tạo đơn.`; }
+  finally { analyzed = null; working = false; element('analyze').disabled = false; }
 });
 refreshConnection();
 if (chrome.tabs?.query) findPancakeTabs().catch(error => element('chat-status').textContent = error.message);
