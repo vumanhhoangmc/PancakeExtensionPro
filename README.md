@@ -55,9 +55,9 @@ Phân tích và lộ trình tiếp theo nằm trong [AI_BETA_PLAN.md](AI_BETA_PL
 
 ## Các công tắc Pancake
 
-### Hỗ trợ trả lời comment (0.9.3)
+### Hỗ trợ trả lời comment (0.9.6)
 
-Sau khi bạn bấm **nút Gửi comment**, extension chờ ô comment được xóa và comment mới của shop xuất hiện, rồi mở hộp nhắn riêng giống **Alt+B** và điền **/** vào ô **Nhập nội dung tin nhắn**. Bạn tiếp tục chọn/soạn nội dung và tự gửi tin riêng. Không ghi đè nháp riêng có sẵn; đổi hội thoại, bắt đầu gõ hoặc tắt công tắc sẽ hủy bước đang chờ. Bước này dùng chung công tắc Hỗ trợ trả lời comment. Bản 0.9.3 sửa nhận diện comment hai dòng và mở bằng nút nhắn riêng của comment, không phụ thuộc phím giả lập. Sau cập nhật cần tải lại extension và tab Pancake.
+Sau khi bạn bấm **nút Gửi comment** hoặc nhấn **Enter** trong ô comment, extension chờ ô comment được xóa và comment mới của shop xuất hiện, rồi mở hộp nhắn riêng giống **Alt+B** và điền **/** vào ô **Nhập nội dung tin nhắn**. Bạn tiếp tục chọn/soạn nội dung và tự gửi tin riêng. Không ghi đè nháp riêng có sẵn; đổi hội thoại, bắt đầu gõ hoặc tắt công tắc sẽ hủy bước đang chờ. Bước này dùng chung công tắc Hỗ trợ trả lời comment. Bản 0.9.4 nhận diện hội thoại cả khi dòng đang chọn nằm ngoài danh sách hiển thị, chờ nút khi Pancake vẽ lại giao diện; giữ sửa nhận diện comment hai dòng và mở bằng nút nhắn riêng của comment, không phụ thuộc phím giả lập. Bản 0.9.5 bổ sung Enter; Shift+Enter xuống dòng, gõ bộ gõ và giữ phím không kích hoạt. Bản 0.9.6 nhận cả hai dạng biểu tượng nhắn riêng trước và sau khi đã liên hệ khách. Sau cập nhật cần tải lại extension và tab Pancake.
 
 Bản 0.9.1 xác nhận comment bằng khóa hội thoại và ID dòng comment tương ứng trong vùng đang mở, không phụ thuộc hình dạng icon. Sửa điều kiện chờ khi Pancake thay node hội thoại hoặc giữ nguyên nội dung comment. Sau cập nhật phải tải lại extension và tab Pancake, kiểm tra công tắc này đang bật rồi bấm lại dòng comment.
 

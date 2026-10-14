@@ -1,5 +1,23 @@
 # Lịch sử phát triển
 
+## 0.9.6 — 14/10/2026
+
+- Sửa không mở box ở comment có biểu tượng nhắn riêng dạng viền (chưa kích hoạt). Nhận cả dạng viền và dạng đặc trong đúng comment khách.
+- Đối chiếu nút thực tế mở modal; Chrome fixture xác nhận bộ chọn cũ bỏ sót dạng viền, bản mới chạy cả click và Enter. Giữ hỗ trợ dạng đặc.
+- 25 kiểm thử Node và cú pháp đạt; không gửi tin thật để thử.
+
+## 0.9.5 — 13/10/2026
+
+- Hỗ trợ Enter trong ô comment bên cạnh bấm nút gửi; bỏ qua Shift+Enter, IME và giữ phím.
+- Hai cách dùng cùng bước xác nhận comment đã xuất hiện trước khi mở nhắn riêng và điền '/'.
+- 25 kiểm thử Node đạt; hai cách gửi mô phỏng trên Chrome đạt. Không gửi tin tới khách để thử.
+
+## 0.9.4 — 13/10/2026
+
+- Sửa followup bị bỏ qua khi selected row mất khỏi danh sách ảo: xác định khóa từ comment khách đang mở nếu duy nhất.
+- Chờ action nhắn riêng trở lại sau React rerender; không chặn action do không hover.
+- 23 kiểm thử Node đạt; Chrome fixture selected row biến mất sau gửi vẫn mở box và điền '/'. Không gửi comment thật để thử.
+
 ## 0.9.3 — 13/10/2026
 
 - Sửa lỗi không mở hộp nhắn riêng sau gửi comment: đọc innerText để nhận đúng comment hai dòng có thẻ br.

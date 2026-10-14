@@ -6,7 +6,14 @@
   const cancel = () => { generation++; clearTimeout(timer); };
   const visible = node => node && node.getBoundingClientRect().width > 0 && node.getBoundingClientRect().height > 0;
   const keyOf = row => row?.querySelector('.list-tags-conv')?.className.match(/\blist_tags_conv_([0-9]+_[0-9]+)\b/)?.[1];
-  const selectedKey = () => keyOf(document.querySelector('.conversation-list-item.selected'));
+  const selectedKey = () => {
+    const rowKey = keyOf(document.querySelector('.conversation-list-item.selected'));
+    if (rowKey) return rowKey;
+    // Virtualized conversation rows can disappear while their comment stays open.
+    const roots = [...document.querySelectorAll('#messageCol .comment-message-ele.media-current-customer[id]')];
+    if (roots.length !== 1) return;
+    return roots[0].id.match(/^message_([0-9]+_[0-9]+)$/)?.[1];
+  };
   chrome.storage.local.get({ autoCommentReply: false, uiRecording: false }, settings => {
     enabled = Boolean(settings.autoCommentReply); recording = Boolean(settings.uiRecording);
   });
@@ -16,14 +23,16 @@
     if (changes.uiRecording) { recording = Boolean(changes.uiRecording.newValue); cancel(); }
   });
   document.addEventListener('input', event => { if (event.isTrusted) cancel(); }, true);
-  document.addEventListener('keydown', event => { if (event.isTrusted) cancel(); }, true);
-  document.addEventListener('click', event => {
+  const onAction = event => {
     if (!event.isTrusted) return;
     cancel();
     const target = event.target instanceof Element ? event.target : event.target?.parentElement;
     const button = target?.closest('#messageCol #reply_box .new-reply-box-btn');
+    const enterSend = event.type === 'keydown' && event.key === 'Enter' && !event.shiftKey
+      && !event.isComposing && event.keyCode !== 229 && !event.repeat
+      && target === document.querySelector('#messageCol #replyBoxComposer');
     if (!enabled || recording || !/^\/multi_pages(?:[/?#]|$)/.test(location.pathname + location.search + location.hash)
-      || !button?.querySelector('svg path[d^="M240,127.89"]')) return;
+      || (event.type === 'keydown' ? !enterSend : !button?.querySelector('svg path[d^="M240,127.89"]'))) return;
     const key = selectedKey();
     const root = key && document.getElementById(`message_${key}`);
     const composer = document.querySelector('#messageCol #replyBoxComposer');
@@ -43,13 +52,15 @@
           return node.id && !priorIds.has(node.id) && (body?.innerText || body?.textContent || node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim().includes(sentText);
         });
         if (actual && !actual.value.trim() && newReply) {
-          opened = true;
           // This customer-comment action opens the same modal as Alt+B.
           // Click the actual React control instead of depending on a synthetic shortcut.
           const currentRoot = document.getElementById(`message_${key}`);
-          const privateButton = currentRoot?.querySelector('.comment-action-btn:has(svg path[d^="M128,24A104"][d*="84,140"])');
-          if (!visible(privateButton) || privateButton.classList.contains('disabled')) return;
-          privateButton.click();
+          // Filled (already contacted) and outline (not contacted yet) chat icons.
+          const privateButton = currentRoot?.querySelector('.comment-action-btn:has(svg path[d^="M128,24A104"][d*="84,140"]), .comment-action-btn:has(svg path[d^="M140,128a12"][d*="84,116"])');
+          if (privateButton && !privateButton.classList.contains('disabled')) {
+            opened = true;
+            privateButton.click();
+          }
         }
       }
       if (opened) {
@@ -66,5 +77,7 @@
       if (Date.now() - start < 8000) timer = setTimeout(check, 50);
     };
     timer = setTimeout(check, 0);
-  }, true);
+  };
+  document.addEventListener('click', onAction, true);
+  document.addEventListener('keydown', onAction, true);
 })();

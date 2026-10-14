@@ -10,14 +10,17 @@ function bindRow(row){row.addEventListener('click',()=>{
   // Reproduce React replacing a row while retaining the root comment.
   const replacement=row.cloneNode(true);replacement.classList.add('selected');row.replaceWith(replacement);bindRow(replacement);
   if(replacement.id==='comment-row'){
-    if(!document.querySelector('#message_123_456')) document.querySelector('#view').innerHTML='<div class="post-module">Bài viết mẫu</div><div id="message_123_456" class="comment-message-ele">Khách: sản phẩm này còn không?<button class="comment-action-btn" onclick="openPrivate()">Nhắn riêng<svg><path d="M128,24A104 84,140"></path></svg></button></div>';
+    if(!document.querySelector('#message_123_456')) document.querySelector('#view').innerHTML='<div class="post-module">Bài viết mẫu</div><div id="message_123_456" class="comment-message-ele media-current-customer">Khách: sản phẩm này còn không?<button class="comment-action-btn" onclick="openPrivate()">Nhắn riêng<svg><path d="M128,24A104 84,140"></path></svg></button></div>';
+    if(location.hash!=='#filled') document.querySelector('#message_123_456 .comment-action-btn path').setAttribute('d','M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128ZM84,116a12,12,0,1,0,12,12A12,12,0,0,0,84,116Zm88,0a12,12,0,1,0,12,12A12,12,0,0,0,172,116Zm60,12A104,104,0,0,1,79.12,219.82L45.07,231.17a16,16,0,0,1-20.24-20.24l11.35-34.05A104,104,0,1,1,232,128Zm-16,0A88,88,0,1,0,51.81,172.06a8,8,0,0,1,.66,6.54L40,216,77.4,203.53a7.85,7.85,0,0,1,2.53-.42,8,8,0,0,1,4,1.08A88,88,0,0,0,216,128Z');
   }else document.querySelector('#view').innerHTML='<div id="message_123_789" class="inbox-message-ele">Tin nhắn Messenger</div>';
 });}
 document.querySelectorAll('.conversation-list-item').forEach(bindRow);
-document.querySelector('#send-comment').addEventListener('click',()=>{
+function sendComment(){
   const input=document.querySelector('#replyBoxComposer');const text=input.value;if(!text.trim())return;
-  input.value='';const row=document.createElement('div');row.id='message_sent_'+Date.now();row.className='comment-message-ele media-current-user';const body=document.createElement('div');body.className='comment-body-text';text.split('\n').forEach((line,i)=>{if(i)body.append(document.createElement('br'));body.append(document.createTextNode(line));});row.append(body);document.querySelector('#view').append(row);
-});
+  document.querySelector('.conversation-list-item.selected')?.remove();input.value='';const row=document.createElement('div');row.id='message_sent_'+Date.now();row.className='comment-message-ele media-current-user';const body=document.createElement('div');body.className='comment-body-text';text.split('\n').forEach((line,i)=>{if(i)body.append(document.createElement('br'));body.append(document.createTextNode(line));});row.append(body);document.querySelector('#view').append(row);
+}
+document.querySelector('#send-comment').addEventListener('click',sendComment);
+document.querySelector('#replyBoxComposer').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendComment();}});
 function openPrivate(){
   const modal=document.createElement('section');modal.style.cssText='padding:20px;border:1px solid #ddd;background:white';modal.innerHTML='<h2>Gửi tin nhắn trực tiếp (mô phỏng)</h2><textarea id="previewReplyInput" placeholder="Nhập nội dung tin nhắn"></textarea>';document.body.append(modal);
 }

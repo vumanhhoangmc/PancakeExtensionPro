@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pancake Assistant Pro",
-  "version": "0.9.3",
+  "version": "0.9.6",
   "description": "DEV: Bố Hoàng No1",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["https://pancake.vn/*", "https://*.pancake.vn/*", "http://127.0.0.1/*"],

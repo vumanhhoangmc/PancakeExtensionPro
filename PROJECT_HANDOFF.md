@@ -1,8 +1,26 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 13/10/2026. Phiên bản manifest: `0.9.3`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
+Cập nhật: 14/10/2026. Phiên bản manifest: `0.9.6`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
 
-## Sửa mở nhắn riêng comment 0.9.3
+## Hai trạng thái nút nhắn riêng 0.9.6
+
+Người dùng đã xác nhận 0.9.5 chạy tốt rồi báo lại lỗi ngày 14/10. Đối chiếu Sinh Đinh trên Pancake: root/selected key và nút gửi vẫn khớp, nhưng action nhắn riêng chưa kích hoạt dùng SVG outline path bắt đầu M140,128a12 và chứa 84,116. Bản trước chỉ nhận SVG filled bắt đầu M128,24A104, chứa 84,140 (is-active). Thêm đúng selector outline vào cùng action trong root comment; không chọn theo vị trí hoặc toàn trang. Bấm nút outline thật mở modal “Gửi tin nhắn từ bình luận tới” với #previewReplyInput; modal tùy lịch sử có thể khác tiêu đề “Gửi tin nhắn trực tiếp tới”. Đã đóng modal, không gửi tin thật, giữ draft comment của người dùng.
+
+Chrome fixture nay mặc định dùng path outline đầy đủ lấy từ DOM, #filled dùng dạng cũ. Xác nhận selector cũ false trên outline; bản mới click và Enter đều mở box nhận '/'; filled click vẫn nhận '/'. 25 Node tests và cú pháp content/popup/followup đạt. Impact file/fixture UNKNOWN do chưa có trong graph; nơi nạp manifest và fixture được xác minh nguồn. Chưa kiểm chứng lượt gửi thật với bản cài 0.9.6; cần reload extension/tab.
+
+## Lịch sử gửi comment bằng Enter 0.9.5
+
+Người dùng xác nhận gặp lỗi cả nút gửi và Enter. onAction capture dùng chung cho click/keydown. Enter chỉ arm khi target chính là #messageCol #replyBoxComposer, không Shift, không IME/isComposing/keyCode 229, không repeat; không preventDefault và không tự gửi. Cả hai cách vẫn phải thấy composer trống và comment shop ID mới khớp nội dung, rồi mở box và điền '/'. Các phím/thao tác trusted khác hủy chờ. Vẫn giữ bản sửa khóa hội thoại khi row không còn trong DOM ở 0.9.4.
+
+25 kiểm thử Node đạt; Chrome fixture xác nhận cả Enter và bấm gửi mở box nhận '/'. Fixture send handler hỗ trợ hai cách, xóa selected row và render br. Không gửi khách thật để thử. Impact module/test/fixture UNKNOWN; manifest/fixture/test là nơi dùng đã đối chiếu nguồn. Bản cài cần reload extension và tab Pancake; chưa xác nhận lượt gửi thật sau reload.
+
+## Lịch sử sửa khóa hội thoại khi mở nhắn riêng 0.9.4
+
+Đối chiếu tab Pancake thật: comment khách message_1077252308444161_2885370075178481 vẫn mở, nhưng .conversation-list-item.selected không có trong DOM do danh sách ảo chỉ giữ các row đang hiển thị. selectedKey cũ trả undefined nên điều kiện khởi động followup dừng trước khi chờ gửi. Nay ưu tiên row key; khi row vắng chỉ fallback nếu có đúng một #messageCol .comment-message-ele.media-current-customer[id], lấy khóa số_số từ id. Không fallback từ tên khách hoặc comment shop; nhiều comment khách thì từ chối. Kiểm tra lại khóa trong từng lần polling để không mở nhầm người.
+
+Không yêu cầu nút nhắn riêng có kích thước vì action có thể ẩn khi không hover. Chỉ mở khi tìm đúng action trong root đang mở và không disabled. Nếu nút tạm mất do React rerender, tiếp tục polling trong giới hạn 8 giây; chỉ đặt opened sau khi tìm được nút. Không tự gửi comment/inbox. Node 23/23 đạt; Chrome fixture xóa selected row ngay lúc gửi, comment hai dòng dùng br, vẫn mở box và điền '/'. Chưa kiểm chứng toàn bộ luồng gửi thật trên extension đã reload, không gửi khách chỉ để thử. Impact file/test/fixture UNKNOWN, caller qua manifest và fixture/test đã xác minh trực tiếp.
+
+## Lịch sử sửa mở nhắn riêng comment 0.9.3
 
 Lỗi thực tế: comment-body-text dùng <br> giữa hai dòng. textContent ghép “🥰Anh/chị” trong khi composer có xuống dòng, khiến includes(sentText) thất bại và không chạy bước mở box. Nay dùng innerText để đối chiếu văn bản hiển thị. Không bỏ điều kiện composer trống + comment shop ID mới.
 
