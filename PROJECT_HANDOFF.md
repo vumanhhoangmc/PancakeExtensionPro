@@ -1,6 +1,22 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 14/10/2026. Phiên bản manifest: `0.9.6`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
+Cập nhật: 15/10/2026. Phiên bản manifest: `0.9.8`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
+
+## Bảng giá Khoai 0.9.8
+
+`pricing.js` thêm `taroPrices`: 6kg → 240000, 10kg → 380000. `calculateDiscount` nhận chính xác tên Khoai Sọ Mán Mộc Châu sau khi bỏ quy cách/năm và chuẩn hóa khoảng trắng, cộng kg × số lượng. Tất cả dòng phải thuộc cùng bảng (miến hoặc khoai); hỗn hợp và mốc chưa khai báo trả null. Giữ kiểu kết quả `{ kilograms, targetTotal, discount }` để hai caller `adjustMienSamPrice` và `priceVerifiedForCurrentOrder` dùng nguyên luồng hiện tại. Giữ khóa storage `autoMienSamPrice` và ID popup để không mất lựa chọn cũ, chỉ đổi nhãn hiển thị sang Miến Sâm / Khoai. Không tự tích miễn phí giao hàng. Bổ sung test 3kg×2, 5kg×2, cộng nhiều dòng, không tăng giá, sai loại và đơn hỗn hợp.
+
+## Rà soát ổn định 0.9.7
+
+Giữ nguyên luồng Pancake, comment và AI sau khi chạy hồi quy. Sửa POS: mỗi thao tác giữ `operationContext` gồm generation, URL/trạng thái lọc và holder. Kiểm tra lại sau await, trước click checkbox và trước công bố kết quả. Tắt rồi bật nhanh vẫn làm generation cũ hết hiệu lực. `finally` không cuộn lại danh sách mới nếu tác vụ đã bị hủy. Không mở in khi `scanning` hoặc đang có modal hiển thị.
+
+`changeSelection` lấy lại row/input theo `data-row-key` sau mỗi lần click vì React có thể thay toàn bộ hàng. Ghi nhận `selectedKeys` theo từng checkbox đã xác minh, kể cả khi mới chọn một phần, để Clear có thể xử lý phần đã chọn. Bỏ chọn dùng bản sao của Set, tránh vừa duyệt vừa thay tập khóa. Sau hủy, các checkbox đã chọn trước đó được giữ; không tự hoàn tác trên bộ lọc khác. Người dùng có thể Clear ở bộ lọc cũ hoặc bỏ chọn trên POS. Khóa bộ lọc hiện gồm URL và nội dung các radio đang chọn; bộ lọc chỉ đổi nội bộ nhưng giữ nguyên cả hai dấu hiệu này vẫn cần người dùng quét lại.
+
+Modal ẩn không chặn tác vụ. Tooltip nhiều sản phẩm được chờ tối đa 1.500 ms (trước 700 ms), trả về ngay khi có nội dung; vẫn poll 70 ms và cuộn 60 ms nên không thêm 800 ms vào các dòng tải bình thường. Không thay đổi cách nhóm/giá hoặc thêm tự gửi/tự tích miễn phí giao hàng.
+
+Bộ thử mới: `node tests/pos-serve.cjs` → `http://127.0.0.1:8769/shop/test/order` (11 ca bảng ảo, tooltip tái sử dụng/tải chậm, React thay row, chọn lại/xám/Clear, tắt/đổi URL giữa tác vụ, chặn in thiếu/đang chọn). `node tests/popup-serve.cjs` → `http://127.0.0.1:8770/` (6 ca dùng popup HTML/CSS/JS thật, mock Chrome storage/tabs). Máy chủ chỉ nghe 127.0.0.1, không nạp vào manifest. Xem báo cáo [15/10/2026](docs/TEST_REPORT_2026-10-15.md).
+
+GitNexus được rebuild thành công sau khi tăng buffer cho riêng tiến trình lên 1 GiB. Impact `changeSelection` HIGH: callers trực tiếp `selectGroup` và `clearGroups`, lan tới render/quét nhóm; đã kiểm tra cả các luồng đó. Entry handlers có UNKNOWN được đối chiếu addEventListener/storage trong nguồn. Graph có cảnh báo giới hạn số flow, không coi các flow vắng mặt là không có ảnh hưởng.
 
 ## Hai trạng thái nút nhắn riêng 0.9.6
 
@@ -176,7 +192,7 @@ Tag được chọn có phần tử con `.ellipse` trong `button.btn-tag-item`. 
 
 ### 5. Phân nhóm và in đơn POS Cake
 
-Content script POS chỉ chạy ở `/shop/{id}/order`. Công tắc `posGroupPrint` (mặc định tắt) bật nút **Phân nhóm đơn** trên trang. Người dùng đặt bộ lọc POS trước, rồi bấm **Quét và phân nhóm**. `pos-content.js` cuộn `.ant-table-tbody-virtual-holder`, đọc các `.ant-table-row[data-row-key]` và mã đơn trong `.order-id-column a`. Cột sản phẩm là ô thứ 10 của mỗi dòng (chỉ số 9), đã đối chiếu với header **Sản phẩm** trên POS ngày 03/10/2026. Dòng một sản phẩm hiển thị `Tên x Số lượng`; dòng nhiều sản phẩm chỉ hiển thị `Nhiều sản phẩm`. Script phát sự kiện rê chuột lên ô này, đọc từng `.ant-menu-title-content` trong bảng nổi `.order-action-list:not(.ant-popover-hidden)` rồi rời ô. Mỗi dòng phải khớp mẫu `Tên x Số lượng` của `parseListProduct()`; nếu bảng nổi không hiện hoặc có dòng không hợp lệ trong 700 ms, đơn vào mục cần xem lại. Không mở modal chi tiết. Giữa hai vị trí cuộn chỉ chờ 60 ms; trạng thái tiến độ cập nhật mỗi 10 đơn. Không đọc cookie hoặc API nội bộ.
+Content script POS chỉ chạy ở `/shop/{id}/order`. Công tắc `posGroupPrint` (mặc định tắt) bật nút **Phân nhóm đơn** trên trang. Người dùng đặt bộ lọc POS trước, rồi bấm **Quét và phân nhóm**. `pos-content.js` cuộn `.ant-table-tbody-virtual-holder`, đọc các `.ant-table-row[data-row-key]` và mã đơn trong `.order-id-column a`. Cột sản phẩm là ô thứ 10 của mỗi dòng (chỉ số 9), đã đối chiếu với header **Sản phẩm** trên POS ngày 03/10/2026. Dòng một sản phẩm hiển thị `Tên x Số lượng`; dòng nhiều sản phẩm chỉ hiển thị `Nhiều sản phẩm`. Script phát sự kiện rê chuột lên ô này, đọc từng `.ant-menu-title-content` trong bảng nổi `.order-action-list:not(.ant-popover-hidden)` rồi rời ô. Mỗi dòng phải khớp mẫu `Tên x Số lượng` của `parseListProduct()`; nếu bảng nổi không hiện hoặc có dòng không hợp lệ trong 1.500 ms, đơn vào mục cần xem lại. Không mở modal chi tiết. Giữa hai vị trí cuộn chỉ chờ 60 ms; trạng thái tiến độ cập nhật mỗi 10 đơn. Không đọc cookie hoặc API nội bộ.
 
 `pos-groups.js` chuẩn hóa tiền tố năm, gom `Miến Sợi Nhỏ/To` cùng biến thể `Miến Sâm Sợi Nhỏ/To`, nhân quy cách `kg/g` với số lượng và tạo khóa nhóm không phụ thuộc thứ tự sản phẩm. Sản phẩm không có quy cách được gom theo tên và số lượng. Bảng kết quả hiện thành phần, số đơn và mã đơn. Script đối chiếu số đơn đã quét với số ở trạng thái POS đang chọn; nếu thiếu, không cho in từ kết quả chưa đủ. Đơn thiếu tên/số lượng được liệt kê ở mục cần xem lại.
 

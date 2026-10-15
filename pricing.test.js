@@ -2,6 +2,27 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { calculateDiscount } = require('./pricing');
 
+test('Khoai Sọ Mán Mộc Châu: 3kg x 2 giảm 20k, 5kg x 2 giảm 20k', () => {
+  assert.deepEqual(calculateDiscount([{ name: '3Kg Khoai Sọ Mán Mộc Châu', quantity: '2' }], 260000),
+    { kilograms: 6, targetTotal: 240000, discount: 20000 });
+  assert.deepEqual(calculateDiscount([{ name: '5Kg Khoai Sọ Mán Mộc Châu', quantity: 2 }], 400000),
+    { kilograms: 10, targetTotal: 380000, discount: 20000 });
+  assert.deepEqual(calculateDiscount([
+    { name: '3Kg Khoai Sọ Mán Mộc Châu', quantity: 1 },
+    { name: '3Kg Khoai Sọ Mán Mộc Châu', quantity: 1 }
+  ], 260000), { kilograms: 6, targetTotal: 240000, discount: 20000 });
+});
+
+test('Khoai chỉ giảm ở mốc được cung cấp và không tăng giá hay áp cho đơn lẫn loại', () => {
+  const taro = (kg, quantity = 1) => ({ name: `${kg}KG Khoai Sọ Mán Mộc Châu`, quantity });
+  for (const total of [230000, 240000]) assert.equal(calculateDiscount([taro(3, 2)], total).discount, 0);
+  for (const kg of [3, 5, 8, 9, 12]) assert.equal(calculateDiscount([taro(kg)], 500000), null);
+  assert.equal(calculateDiscount([taro(5), { name: '1KG Miến Sâm Sợi To', quantity: 1 }], 500000), null);
+  assert.equal(calculateDiscount([{ name: '1KG Miến Sâm Sợi To', quantity: 1 }, taro(5)], 500000), null);
+  assert.equal(calculateDiscount([{ name: '3Kg Khoai Sọ', quantity: 2 }], 260000), null);
+  assert.equal(calculateDiscount([{ name: '3Kg Khoai Sọ Mán Mộc Châu loại khác', quantity: 2 }], 260000), null);
+});
+
 test('áp dụng đúng từng mốc giá', () => {
   const prices = new Map([[1, 95000], [2, 160000], [3, 220000], [4, 280000],
     [5, 350000], [6, 420000], [10, 600000]]);

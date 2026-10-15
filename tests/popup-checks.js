@@ -1,0 +1,15 @@
+const run=document.createElement('button');run.id='run-checks';run.textContent='Chạy kiểm thử popup (mô phỏng)';document.body.append(run);
+const report=document.createElement('div');report.id='test-report';report.style.cssText='padding:15px;line-height:1.7';document.body.append(report);
+run.onclick=()=>{
+  report.replaceChildren();let passed=0,total=0;
+  const assert=(ok)=>{if(!ok)throw Error('Sai trạng thái');};
+  const check=(name,fn)=>{total++;const line=document.createElement('p');try{fn();passed++;line.textContent='PASS '+name;line.style.color='#14632c';}catch(e){line.textContent='FAIL '+name;line.style.color='#c22';}report.append(line);};
+  const el=id=>document.getElementById(id);
+  check('Mặc định đúng, 8 công tắc độc lập',()=>{assert(el('auto-order').checked&&el('auto-print-note').checked);const fields={'auto-comment-reply':'autoCommentReply','auto-order':'autoOrder','auto-print-note':'autoPrintNote','auto-mien-sam-price':'autoMienSamPrice','auto-submit-order':'autoSubmitOrder','auto-order-tags':'autoOrderTags','pos-group-print':'posGroupPrint','ai-auto-order-beta':'aiAutoOrderBeta'};for(const [id,key] of Object.entries(fields)){const before=JSON.stringify(fixtureStorage);el(id).click();assert(fixtureStorage[key]===el(id).checked);el(id).click();assert(fixtureStorage[key]===el(id).checked);}});
+  check('Đồng bộ khi đổi công tắc từ storage',()=>{chrome.storage.local.set({autoCommentReply:true,autoOrder:false,autoPrintNote:false,autoMienSamPrice:true,autoSubmitOrder:true,autoOrderTags:true,posGroupPrint:true,aiAutoOrderBeta:true});assert(el('auto-comment-reply').checked&&!el('auto-order').checked&&!el('auto-print-note').checked&&el('auto-mien-sam-price').checked&&el('auto-submit-order').checked&&el('auto-order-tags').checked&&el('pos-group-print').checked&&el('ai-auto-order-beta').checked);});
+  check('Hai tab hiển thị độc lập',()=>{el('tab-poscake').click();assert(el('pane-pancake').hidden&&!el('pane-poscake').hidden);el('tab-pancake').click();assert(!el('pane-pancake').hidden&&el('pane-poscake').hidden);});
+  check('Ghi nhận không đổi công tắc; dừng và sao chép được cập nhật',()=>{el('record-ui').click();assert(fixtureStorage.uiRecording===true&&fixtureStorage.autoSubmitOrder===true);chrome.storage.local.set({uiEvents:[{step:1}]});assert(!el('copy-ui').disabled&&el('record-status').textContent.includes('1/4'));el('record-ui').click();assert(fixtureStorage.uiRecording===false&&el('record-status').textContent.includes('1 thao tác'));});
+  check('Beta mở đúng trang kết nối',()=>{el('open-ai-settings').click();assert(fixtureTabs[0].url==='https://extension.invalid/ai-beta.html'&&el('ai-beta-status').textContent.includes('đã bật'));});
+  check('Các mục tính năng không chồng lên nhau',()=>{const labels=[...el('pane-pancake').querySelectorAll('label.feature')];assert(labels.every((label,i)=>!i||label.getBoundingClientRect().top>=labels[i-1].getBoundingClientRect().bottom));});
+  const end=document.createElement('strong');end.textContent=passed+'/'+total+' đạt';report.append(end);
+};

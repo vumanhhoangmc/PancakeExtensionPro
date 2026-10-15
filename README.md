@@ -88,6 +88,8 @@ Trong **Kiểm tra giao diện**, việc ghi nhận tạm dừng các thao tác 
 
 ## Phân nhóm đơn trên POS Cake
 
+**Bản 0.9.7:** thao tác POS dừng khi tắt tính năng hoặc phát hiện URL/trạng thái lọc thay đổi; không mở in khi đang chọn nhóm. Nếu dừng giữa chừng, những đơn đã chọn vẫn giữ nguyên: dùng Clear ở bộ lọc cũ hoặc bỏ chọn trên POS trước khi quét lại. Đã tăng thời gian chờ tối đa cho bảng nổi sản phẩm tải chậm, đồng thời giữ tốc độ đọc nhanh khi nội dung sẵn có. Sau khi cập nhật, tải lại extension và tab Pancake/POS.
+
 Nút **Clear** xóa kết quả phân nhóm và bỏ chọn các đơn do extension đã chọn trong bộ lọc hiện tại. Nếu còn đơn được chọn thủ công trên POS, hãy bỏ chọn trước khi quét lại. Sau khi **Chọn nhóm để in** thành công, nút của nhóm đó chuyển màu xám để đánh dấu đã thao tác; vẫn có thể bấm lại để chọn lại nhóm. Màu xám được giữ đến khi Clear hoặc quét lại.
 
 1. Trên trang **Đơn hàng** của POS Cake, đặt bộ lọc đơn cần in (ví dụ **Chưa in**).
@@ -98,6 +100,10 @@ Nút **Clear** xóa kết quả phân nhóm và bỏ chọn các đơn do extens
 Nhóm được xác định theo **thành phần đóng gói**: khối lượng trong tên sản phẩm nhân với số lượng, tách riêng sợi nhỏ, sợi to và các sản phẩm khác. Chẳng hạn `2KG Miến Sâm Sợi To x 1` và `1KG Miến Sâm Sợi To x 2` cùng nhóm **2kg miến sâm to**; đơn gồm **2kg miến sâm nhỏ + 1kg miến sâm to** thành nhóm riêng. Tên `Miến Sợi Nhỏ/To` trên POS được hiểu là Miến Sâm tương ứng. Sản phẩm không có `kg/g` được gom theo tên và số lượng.
 
 Extension không in đơn có dữ liệu sản phẩm thiếu hoặc không đọc đủ. Nếu số đơn quét được khác tổng số đơn POS báo trong bộ lọc, tính năng yêu cầu quét lại. Hãy bỏ chọn những đơn đã chọn thủ công trên POS trước khi quét. Sau khi thay bộ lọc, quét lại để có nhóm mới.
+
+### Bảng giá Khoai Sọ Mán Mộc Châu (từ 0.9.8)
+
+Dùng chung công tắc **Tự điều chỉnh giá Miến Sâm / Khoai**. Khi bạn tích Miễn phí giao hàng, đơn chỉ gồm Khoai Sọ Mán Mộc Châu được tính tổng kg từ tên × số lượng: **6kg = 240.000đ**, **10kg = 380.000đ**. Ví dụ gói 3kg × 2 giá 260.000đ hoặc gói 5kg × 2 giá 400.000đ đều điền Giảm giá 20.000đ. Chỉ giảm khi tổng tiền cao hơn mốc; các khối lượng khác, loại khoai khác hoặc đơn lẫn khoai/miến/sản phẩm khác được bỏ qua. Công tắc đã lưu từ bản cũ được giữ nguyên.
 
 ### Bảng giá Miến Sâm
 
@@ -131,6 +137,8 @@ Chạy `node --test product-summary.test.js pricing.test.js pos-groups.test.js` 
 AI Beta: chạy `node --test ai-order-plan.test.cjs chat-reader.test.cjs chat-content.test.cjs ai-protocol.test.cjs ai-transport.test.cjs`. Kiểm thử điền nháp trên Chrome: `node tests/ai-serve.cjs`, mở `http://127.0.0.1:8766` rồi bấm **Chạy kiểm thử**. Dữ liệu mô phỏng, không gọi OpenAI/Pancake.
 
 ## Dành cho người phát triển hoặc AI tiếp theo
+
+Kết quả rà soát gần nhất: [Báo cáo kiểm thử 15/10/2026](docs/TEST_REPORT_2026-10-15.md). Kiểm thử POS trên Chrome: `node tests/pos-serve.cjs` rồi mở `http://127.0.0.1:8769/shop/test/order`. Kiểm thử popup: `node tests/popup-serve.cjs` rồi mở `http://127.0.0.1:8770/`. Các trang mô phỏng dùng mã extension thật và không tạo đơn, gửi khách hoặc in phiếu thật.
 
 Đọc [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) để nắm luồng xử lý, bộ chọn DOM đã xác nhận trực tiếp, nguyên nhân các lỗi đã sửa và cách mở rộng. [AGENTS.md](AGENTS.md) là bản hướng dẫn ngắn cho tác nhân AI mới.
 Lịch sử các mốc phát triển nằm trong [CHANGELOG.md](CHANGELOG.md).

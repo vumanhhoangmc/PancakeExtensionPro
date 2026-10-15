@@ -1,5 +1,19 @@
 # Lịch sử phát triển
 
+## 0.9.8 — 15/10/2026
+
+- Thêm giá Khoai Sọ Mán Mộc Châu: 6kg 240.000đ, 10kg 380.000đ, dùng chung công tắc chỉnh giá.
+- Đơn chỉ có một loại được hỗ trợ mới áp giá; giữ nguyên bảng Miến Sâm, không áp cho đơn lẫn loại hoặc tự tăng giá.
+- Giữ cấu hình công tắc cũ; bổ sung kiểm thử phép tính và trường hợp bỏ qua.
+
+## 0.9.7 — 15/10/2026
+
+- POS hủy tác vụ khi tắt công tắc, đổi URL/trạng thái lọc hoặc thay danh sách; không hồi sinh kết quả khi tắt/bật nhanh.
+- Đọc lại checkbox theo khóa hàng sau React render; theo dõi phần đã chọn để Clear xử lý được.
+- Bỏ chặn bởi modal đã ẩn; tooltip được chờ tối đa 1,5 giây, không tăng thời gian chờ cố định khi đã có kết quả.
+- Chặn mở in trong lúc chọn/bỏ chọn nhóm; thêm trạng thái đang chọn để phản hồi ngay khi bấm.
+- Thêm bộ kiểm thử Chrome cho bảng ảo POS và popup. Báo cáo chi tiết: `docs/TEST_REPORT_2026-10-15.md`.
+
 ## 0.9.6 — 14/10/2026
 
 - Sửa không mở box ở comment có biểu tượng nhắn riêng dạng viền (chưa kích hoạt). Nhận cả dạng viền và dạng đặc trong đúng comment khách.
