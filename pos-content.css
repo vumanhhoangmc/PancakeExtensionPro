@@ -11,3 +11,9 @@
 #pap-pos-panel .pap-pos-group { border-top: 1px solid #eaecf0; padding: 11px 0; }
 #pap-pos-panel .pap-pos-group strong, #pap-pos-panel .pap-pos-group small { display: block; }
 #pap-pos-panel .pap-pos-group small { margin: 4px 0; color: #667085; }
+#pap-pos-panel .pap-pos-totals { margin: 10px 0 14px; padding: 12px; border: 1px solid #dce3eb; border-radius: 8px; background: #f8fafc; }
+#pap-pos-panel .pap-pos-totals table { width: 100%; border-collapse: collapse; margin-top: 8px; font: inherit; }
+#pap-pos-panel .pap-pos-totals th, #pap-pos-panel .pap-pos-totals td { padding: 6px 0; border-bottom: 1px solid #e4e7ec; text-align: left; overflow-wrap: anywhere; }
+#pap-pos-panel .pap-pos-totals th:last-child, #pap-pos-panel .pap-pos-totals td:last-child { text-align: right; white-space: nowrap; padding-left: 12px; }
+#pap-pos-panel .pap-pos-totals p { margin: 9px 0 0; font-weight: 600; }
+#pap-pos-panel .pap-pos-totals small { display: block; margin-top: 7px; color: #667085; }

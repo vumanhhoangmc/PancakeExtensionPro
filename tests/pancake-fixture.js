@@ -134,6 +134,64 @@ reset();
 const small = quantity => ({ name: '(2026) 1KG Miến Sâm Sợi Nhỏ', quantity });
 const large = quantity => ({ name: '(2026) 2KG Miến Sâm Sợi To', quantity });
 const tests = [
+  ['Chọn sản phẩm: tự mở/điền ghi chú khi chưa tích miễn phí, không tạo đơn', async () => {
+    draft([small(1)], 95000, { autoSubmitOrder: true });
+    await until(() => state.receivedNote === '1kg miến sâm nhỏ');
+    assert(!panel.querySelector('input[type=checkbox]').checked && state.discount === 0 && state.created === 0, 'Tự tích/giảm/tạo đơn');
+  }],
+  ['Đổi số lượng bằng input: cập nhật ngay, giữ focus ở số lượng', async () => {
+    draft([small(1)], 95000); await until(() => !!state.receivedNote);
+    const input = panel.querySelector('.row-table-product input'); input.focus(); input.value = '3';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await until(() => state.receivedNote === '3kg miến sâm nhỏ');
+    assert(document.activeElement === input, 'Cướp focus');
+  }],
+  ['Thêm/xóa dòng: chỉ giữ tóm tắt mới nhất', async () => {
+    draft([small(1)], 95000); await until(() => !!state.receivedNote);
+    state.products.push(large(1)); renderProducts();
+    await until(() => state.receivedNote === '1kg miến sâm nhỏ + 2kg miến sâm to');
+    state.products = [large(2)]; renderProducts();
+    await until(() => state.receivedNote === '4kg miến sâm to');
+  }],
+  ['Giữ lời dặn riêng; xóa hết sản phẩm chỉ xóa tóm tắt tự sinh', async () => {
+    draft([small(1)], 95000); await until(() => !!state.receivedNote);
+    panel.querySelector('textarea').value = 'Gọi trước khi giao | 1kg miến sâm nhỏ';
+    state.products = [small(2)]; renderProducts();
+    await until(() => state.receivedNote === 'Gọi trước khi giao | 2kg miến sâm nhỏ');
+    state.products = []; renderProducts();
+    await until(() => state.receivedNote === 'Gọi trước khi giao');
+  }],
+  ['Sửa sản phẩm khi miễn phí đã tích sẵn vẫn không tự tạo đơn', async () => {
+    draft([small(1)], 95000, { autoSubmitOrder: true });
+    panel.querySelector('input[type=checkbox]').checked = true;
+    await until(() => state.receivedNote === '1kg miến sâm nhỏ');
+    state.products = [small(2)]; renderProducts();
+    await until(() => state.receivedNote === '2kg miến sâm nhỏ');
+    assert(state.created === 0 && state.discount === 0, 'Sửa sản phẩm kích hoạt tạo đơn/giá');
+  }],
+  ['Ghi chú đã lưu: mở sửa và thay tóm tắt, không nhân đôi lời dặn', async () => {
+    draft([small(1)], 95000); await until(() => !!state.receivedNote);
+    const section = panel.querySelector('.note-print-order');
+    section.innerHTML = '<span class="text-note">Gọi trước | 1kg miến sâm nhỏ</span>';
+    section.querySelector('.text-note').onclick = () => {
+      section.innerHTML = '<textarea>Gọi trước | 1kg miến sâm nhỏ</textarea>';
+      section.querySelector('textarea').oninput = event => { state.receivedNote = event.target.value; };
+    };
+    state.products = [small(2)]; renderProducts();
+    await until(() => state.receivedNote === 'Gọi trước | 2kg miến sâm nhỏ');
+  }],
+  ['Đổi nhanh số lượng: chỉ điền giá trị cuối', async () => {
+    draft([small(1)], 95000);
+    for (let i = 2; i <= 5; i++) { state.products = [small(i)]; renderProducts(); await delay(20); }
+    await until(() => state.receivedNote === '5kg miến sâm nhỏ');
+    assert(state.created === 0, 'Tự tạo đơn');
+  }],
+  ['Tắt ghi chú hoặc đổi hội thoại khi đang chờ: dừng điền', async () => {
+    draft([small(1)], 95000); await delay(20); chrome.storage.local.set({ autoPrintNote: false });
+    await delay(250); assert(!state.receivedNote, 'Vẫn điền sau tắt');
+    draft([small(1)], 95000); await delay(20); rows[1].click(); await delay(250);
+    assert(!state.receivedNote, 'Điền sang hội thoại khác');
+  }],
   ['Đơn 3kg: giảm 20.000, lưu ghi chú, tạo đúng 1 đơn, chỉ giữ 2 tag', async () => {
     draft([small(1), large(1)], 240000, { autoSubmitOrder: true, autoOrderTags: true });
     const started = performance.now(); tick();
@@ -190,8 +248,9 @@ const tests = [
   }],
   ['Đổi sản phẩm trong lúc mở ghi chú: không ghi tóm tắt cũ', async () => {
     draft([small(1)], 80000, { autoSubmitOrder: true }, { noteDelay: 120 }); tick();
-    await delay(30); state.products = [small(2)]; renderProducts(); await delay(180);
-    assert(!state.receivedNote && state.created === 0, 'Ghi chú cũ/tạo sai đơn');
+    await delay(30); state.products = [small(2)]; renderProducts();
+    await until(() => state.receivedNote === '2kg miến sâm nhỏ');
+    assert(state.created === 0, 'Tạo sai đơn');
   }],
   ['Bỏ miễn phí giao hàng giữa chừng: hủy ghi chú và tạo đơn', async () => {
     draft([small(1)], 80000, { autoSubmitOrder: true }, { noteDelay: 120 }); tick();
@@ -211,8 +270,8 @@ const tests = [
   ['Không có gợi ý địa chỉ: không tự điền; thu hồi bộ theo dõi DOM', async () => {
     reset({ noSuggestions: true }); chrome.storage.local.set({ autoOrder: true }); rows[0].click();
     await until(() => state.tabClicks === 1);
-    await until(() => activeObservers === 0, 6000);
-    assert(state.addressPicks.length === 0 && activeObservers === 0, 'Không dọn observer/điền địa chỉ tự đoán');
+    await until(() => activeObservers === 1, 6000);
+    assert(state.addressPicks.length === 0 && activeObservers === 1, 'Không dọn observer tạm/điền địa chỉ tự đoán');
   }]
 ];
 document.querySelector('#run-tests').addEventListener('click', async event => {
@@ -223,7 +282,7 @@ document.querySelector('#run-tests').addEventListener('click', async event => {
     try { const note = await run(); item.className = 'pass'; item.textContent = `ĐẠT — ${name}${note ? ` (${note})` : ''}`; }
     catch (error) { item.className = 'fail'; item.textContent = `LỖI — ${name}: ${error.message}`; }
   }
-  reset(); await until(() => activeObservers === 0); event.target.disabled = false;
+  reset(); await until(() => activeObservers === 1); event.target.disabled = false;
   document.querySelector('#manual-status').textContent = `Hoàn tất: ${results.querySelectorAll('.pass').length}/${tests.length}. Observer còn hoạt động: ${activeObservers}`;
 });
 document.querySelector('#manual-test').addEventListener('click', () => {

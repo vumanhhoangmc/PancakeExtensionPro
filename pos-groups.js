@@ -9,7 +9,11 @@
   }
 
   function parseListProduct(text) {
-    const match = String(text || '').trim().match(/^(.+?)\s+x\s+(\d+)$/i);
+    // Fallback for copied text where a stock badge has been joined to the name.
+    const clean = String(text || '').trim()
+      .replace(/^còn\s+thiếu\s*:\s*\d+(?:[.,]\d+)?(?=\s|\()/iu, '').trim();
+    if (/^còn\s+thiếu\s*:/iu.test(clean)) return null; // Ambiguous joined digits: do not guess kg.
+    const match = clean.match(/^(.+?)\s+x\s+(\d+)$/i);
     return match ? [{ name: match[1], quantity: Number(match[2]) }] : null;
   }
 
@@ -54,8 +58,19 @@
       if (!groups.has(result.key)) groups.set(result.key, { ...result, orders: [] });
       groups.get(result.key).orders.push(order);
     }
-    return { groups: [...groups.values()].sort((a, b) =>
-      b.orders.length - a.orders.length || a.label.localeCompare(b.label, 'vi')), unclassified };
+    const sortedGroups = [...groups.values()].sort((a, b) =>
+      b.orders.length - a.orders.length || a.label.localeCompare(b.label, 'vi'));
+    const totals = new Map();
+    for (const group of sortedGroups) {
+      // Composition keys already contain normalized product types and kg per order.
+      for (const [key, amount] of JSON.parse(group.key)) {
+        totals.set(key, (totals.get(key) || 0) + amount * group.orders.length);
+      }
+    }
+    const productTotals = [...totals].sort(([a], [b]) => a.localeCompare(b, 'vi'))
+      .map(([key, amount]) => ({ name: key.slice(key.indexOf(':') + 1),
+        unit: key.startsWith('kg:') ? 'kg' : 'item', quantity: Math.round(amount * 1000) / 1000 }));
+    return { groups: sortedGroups, unclassified, productTotals };
   }
 
   globalThis.PancakePosGroups = { parseListProduct, composition, groupOrders };

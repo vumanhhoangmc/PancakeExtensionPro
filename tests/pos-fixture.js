@@ -41,8 +41,25 @@ document.querySelector('#run').onclick=async()=>{
   document.querySelector('#run').disabled=true;report.replaceChildren();let passed=0,total=0;
   const check=async(name,fn)=>{total++;const line=document.createElement('div');try{await fn();line.textContent='PASS '+name;line.className='pass';passed++;}catch(e){line.textContent='FAIL '+name+': '+e.message;line.className='fail';}report.append(line);};
   await check('Quét 24 đơn ảo; tooltip tái sử dụng; đúng 3 nhóm, mỗi nhóm 8 đơn',async()=>{await reset();const start=performance.now();await scan();assert(cards().length===3&&cards().every(c=>c.querySelector('strong').textContent.endsWith('— 8 đơn')),'Sai nhóm');report.dataset.scanMs=Math.round(performance.now()-start);});
+  await check('Bảng tổng mọi nhóm: 16kg miến nhỏ + 32kg miến to = 48kg',async()=>{const rows=[...document.querySelectorAll('.pap-pos-totals tbody tr')].map(r=>r.textContent);assert(rows.length===2&&rows.includes('miến sâm nhỏ16 kg')&&rows.includes('miến sâm to32 kg'),'Sai tổng sản phẩm');assert(document.querySelector('.pap-pos-totals p').textContent==='Tổng khối lượng: 48 kg','Sai tổng kg');});
+  await check('Nhãn Còn thiếu: 1/4 dính sát tên trong ô đơn và tooltip: vẫn đúng tổng và nhóm in',async()=>{
+    await reset();
+    const decorate=()=>{
+      for(const element of stage.querySelectorAll('.ant-menu-title-content, .ant-table-row > .ant-table-cell:nth-child(10) > span')) {
+        if(element.textContent==='Nhiều sản phẩm'||element.querySelector('.ant-tag'))continue;
+        const badge=document.createElement('span');badge.className='ant-tag';badge.textContent=element.textContent.includes('Nhỏ')?'Còn thiếu: 4':'Còn thiếu: 1';element.prepend(badge);
+      }
+    };
+    const observer=new MutationObserver(decorate);observer.observe(stage,{childList:true,subtree:true});decorate();
+    try {
+      await scan();
+      assert(cards().length===3&&cards().every(c=>c.querySelector('strong').textContent.endsWith('— 8 đơn')),'Tách sai nhóm in');
+      const totals=document.querySelector('.pap-pos-totals');
+      assert(totals.textContent.includes('miến sâm nhỏ16 kg')&&totals.textContent.includes('miến sâm to32 kg')&&!document.querySelector('#pap-pos-groups').textContent.includes('Còn thiếu'),'Sai tổng/lẫn nhãn tồn kho');
+    }finally{observer.disconnect();}
+  });
   await check('Chọn nhóm → nút xám vẫn bấm lại; React thay hàng checkbox',async()=>{select(cards()[0]).click();await until(()=>status().startsWith('Đã chọn 8'));assert(selection.size===8&&select(cards()[0]).classList.contains('pap-pos-selected')&&!select(cards()[0]).disabled,'Sai trạng thái');select(cards()[0]).click();await pause(100);await until(()=>status().startsWith('Đã chọn 8'));assert(selection.size===8,'Chọn lại sai');});
-  await check('Đổi nhóm bỏ hết nhóm cũ; Clear bỏ chọn và xóa kết quả',async()=>{select(cards()[1]).click();await pause(100);await until(()=>status().startsWith('Đã chọn 8'));assert(selection.size===8,'Sai số đơn');document.querySelector('#pap-pos-clear').click();await until(()=>status().startsWith('Đã xóa'));assert(selection.size===0&&cards().length===0,'Clear chưa sạch');});
+  await check('Đổi nhóm bỏ hết nhóm cũ; Clear bỏ chọn và xóa kết quả',async()=>{select(cards()[1]).click();await pause(100);await until(()=>status().startsWith('Đã chọn 8'));assert(selection.size===8,'Sai số đơn');document.querySelector('#pap-pos-clear').click();await until(()=>status().startsWith('Đã xóa'));assert(selection.size===0&&cards().length===0&&!document.querySelector('.pap-pos-totals'),'Clear chưa sạch');});
   await check('Hộp thoại đã ẩn không chặn quét',async()=>{await reset(3);const m=document.createElement('div');m.className='ant-modal';m.role='dialog';m.style.display='none';stage.append(m);await scan();assert(cards().length===3,'Modal ẩn chặn');});
   await check('Tooltip tải 1 giây vẫn đọc đủ sản phẩm',async()=>{await reset(1);hoverDelay=1000;await scan();assert(cards().length===1&&status().includes('0 đơn cần xem lại'),'Bỏ sót tooltip chậm');});
   await check('Tắt tính năng khi đang chọn: không click thêm checkbox',async()=>{await reset();await scan();let countAtStop;afterSelect=()=>{afterSelect=null;setEnabled(false);countAtStop=clicks;};select(cards()[0]).click();await until(()=>countAtStop!==undefined);await pause(800);assert(clicks===countAtStop,'Vẫn chọn đơn sau khi tắt');});

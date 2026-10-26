@@ -1,5 +1,22 @@
 # Lịch sử phát triển
 
+## 0.9.11 — 27/10/2026
+
+- Sửa nhãn tồn kho “Còn thiếu: …” bị ghép vào tên sản phẩm, gây tách sai tổng kg và nhóm in.
+- Loại riêng badge tồn kho ở cả ô đơn lẻ và tooltip nhiều sản phẩm; giữ số lượng mua và quy cách.
+- Bổ sung hồi quy nhãn dính sát tên, gộp nhóm/tổng và từ chối văn bản không phân định được số.
+
+## 0.9.10 — 27/10/2026
+
+- POS hiển thị tổng kg từng loại sản phẩm và tổng khối lượng sau khi quét, tận dụng dữ liệu phân nhóm sẵn có.
+- Đơn thiếu dữ liệu được báo chưa cộng; sản phẩm không có kg/g chỉ hiện số đơn vị. Clear xóa bảng tổng, quét mới không cộng dồn.
+
+## 0.9.9 — 27/10/2026
+
+- Tự mở/điền ghi chú in khi thêm, xóa hoặc sửa số lượng sản phẩm, không cần tích miễn phí giao hàng.
+- Gộp thay đổi nhanh 180 ms, giữ focus và lời dặn riêng; cập nhật tóm tắt qua lần mở lại editor.
+- Chọn sản phẩm không tự chỉnh giá/tạo đơn; checkbox miễn phí vẫn là điểm kích hoạt hai tính năng đó.
+
 ## 0.9.8 — 15/10/2026
 
 - Thêm giá Khoai Sọ Mán Mộc Châu: 6kg 240.000đ, 10kg 380.000đ, dùng chung công tắc chỉnh giá.

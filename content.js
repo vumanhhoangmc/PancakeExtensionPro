@@ -16,6 +16,9 @@
   let recording = false;
   let recordedCount = 0;
   const generatedNotes = new WeakMap();
+  const sectionSummaries = new WeakMap();
+  let productNoteTimer;
+  let observedProducts = null;
   document.addEventListener('pap-ai-draft-start', () => {
     runId++; noteRunId++; priceRunId++; autoSubmitRunId++;
   });
@@ -212,41 +215,90 @@
 
   function noteWithSummary(existing, summary, previous) {
     if (!existing || existing === summary) return summary;
-    if (previous && existing.endsWith(previous)) return existing.slice(0, -previous.length) + summary;
+    if (previous && existing.endsWith(previous)) {
+      const prefix = existing.slice(0, -previous.length);
+      return summary ? prefix + summary : prefix.replace(/\s*\|\s*$/, '').trim();
+    }
+    if (!summary) return existing;
     if (existing.endsWith(` | ${summary}`)) return existing;
     const onlyWeightSummary = existing.split(/\s+\+\s+/).every((part) =>
       /^\d+(?:[.,]\d+)?kg\s+\S+/i.test(part));
     return onlyWeightSummary ? summary : `${existing} | ${summary}`;
   }
 
-  async function fillPrintNote(id, submitId, conversationId, priceReady) {
+  async function fillPrintNote(id, submitId, conversationId, priceReady, productChange = false) {
+    const form = document.querySelector('.crm-platform .view-order');
     const current = () => autoPrintNote && !recording && id === noteRunId && conversationId &&
-      selectedConversationId() === conversationId && freeShippingInput()?.checked;
+      selectedConversationId() === conversationId && form?.isConnected &&
+      form === document.querySelector('.crm-platform .view-order') &&
+      (productChange || freeShippingInput()?.checked);
     if (!current()) return;
     const products = orderProducts();
-    const summary = globalThis.PancakeProductSummary?.summarizeProducts(products);
-    if (!summary || id !== noteRunId) return;
+    const summary = products.length ? globalThis.PancakeProductSummary?.summarizeProducts(products) : '';
+    if ((products.length && !summary) || id !== noteRunId) return;
 
     const section = await waitForNote(() => document.querySelector('.crm-platform .note-print-order'), id);
     if (!section || !current()) return;
+    const previous = sectionSummaries.get(section);
+    const previousSummary = previous?.conversationId === conversationId ? previous.summary : undefined;
+    if (!summary && !previousSummary) return;
     if (!section.querySelector('textarea')) {
       const addNote = [...section.querySelectorAll('*')]
-        .find((element) => element.children.length === 0 && normalizedText(element) === 'Thêm ghi chú');
+        .find((element) => element.children.length === 0 && normalizedText(element) === 'Thêm ghi chú') ||
+        section.querySelector('.text-note');
       if (!addNote) return;
       addNote.click();
     }
 
     const textarea = await waitForNote(() => section.querySelector('textarea'), id);
     if (!textarea || !current() || JSON.stringify(orderProducts()) !== JSON.stringify(products)) return;
-    const next = noteWithSummary(textarea.value.trim(), summary, generatedNotes.get(textarea));
+    const next = noteWithSummary(textarea.value.trim(), summary, previousSummary || generatedNotes.get(textarea));
     if (next !== textarea.value) {
       const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
       setter.call(textarea, next);
       textarea.dispatchEvent(new Event('input', { bubbles: true }));
       generatedNotes.set(textarea, summary);
     }
-    if (autoSubmitOrder && priceReady) await submitAfterNote(section, id, submitId, conversationId, summary);
+    sectionSummaries.set(section, { conversationId, summary });
+    if (!productChange && autoSubmitOrder && priceReady) await submitAfterNote(section, id, submitId, conversationId, summary);
   }
+
+  function productNoteState() {
+    return { form: document.querySelector('.crm-platform .view-order'),
+      conversation: selectedConversationId(), products: JSON.stringify(orderProducts()) };
+  }
+
+  function checkProductNote() {
+    if (!isConversationPage()) return;
+    const next = productNoteState();
+    if (observedProducts && next.form === observedProducts.form &&
+        next.conversation === observedProducts.conversation && next.products === observedProducts.products) return;
+    observedProducts = next;
+    clearTimeout(productNoteTimer);
+    const id = ++noteRunId;
+    autoSubmitRunId++; // Product edits invalidate any pending creation based on the old basket.
+    if (!autoPrintNote || recording || !next.form || !next.conversation) return;
+    productNoteTimer = setTimeout(() => {
+      if (id === noteRunId && autoPrintNote && !recording)
+        void fillPrintNote(id, autoSubmitRunId, next.conversation, false, true);
+    }, 180);
+  }
+
+  // Only react to order-pane DOM changes, not incoming chat messages.
+  const productObserver = new MutationObserver((records) => {
+    if (!isConversationPage()) return;
+    if (records.some((record) => {
+      const target = record.target.nodeType === Node.ELEMENT_NODE ? record.target : record.target.parentElement;
+      return target?.closest('.crm-platform') || [...record.addedNodes, ...record.removedNodes]
+        .some((node) => node.nodeType === Node.ELEMENT_NODE &&
+          (node.matches('.crm-platform') || node.querySelector('.crm-platform')));
+    })) checkProductNote();
+  });
+  productObserver.observe(document.body, { childList: true, subtree: true, characterData: true,
+    attributes: true, attributeFilter: ['value'] });
+  for (const eventName of ['input', 'change']) document.addEventListener(eventName, (event) => {
+    if (event.target instanceof Element && event.target.closest('.row-table-product')) checkProductNote();
+  }, true);
 
   const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -409,6 +461,8 @@
     if (!(input instanceof HTMLInputElement) || input.type !== 'checkbox') return;
     const label = input.closest('label');
     if (!label || normalizedText(label) !== 'Miễn phí giao hàng' || !label.closest('.crm-platform')) return;
+    clearTimeout(productNoteTimer);
+    observedProducts = productNoteState(); // The explicit shipping action owns this run.
     if (!input.checked) {
       noteRunId++;
       priceRunId++;

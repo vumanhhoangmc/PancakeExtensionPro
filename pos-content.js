@@ -47,6 +47,15 @@
     return id && rowKey && productCell ? { id, rowKey, productCell } : null;
   }
 
+  function productText(element) {
+    // Stock alerts are UI metadata, not part of the product name or ordered quantity.
+    const copy = element.cloneNode(true);
+    for (const tag of copy.querySelectorAll('.ant-tag')) {
+      if (/^\s*còn\s+thiếu\s*:/iu.test(tag.textContent)) tag.remove();
+    }
+    return copy.textContent.trim();
+  }
+
   async function waitFor(find, timeout = 4000, context) {
     const until = Date.now() + timeout;
     while (!cancelled && enabled && Date.now() < until) {
@@ -72,7 +81,7 @@
       if (!popover) return null;
       const lines = [...popover.querySelectorAll('.ant-menu-title-content')];
       const products = lines.flatMap((line) =>
-        globalThis.PancakePosGroups.parseListProduct(line.textContent?.trim()) || []);
+        globalThis.PancakePosGroups.parseListProduct(productText(line)) || []);
       return lines.length && products.length === lines.length ? products : null;
     } finally {
       trigger.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
@@ -147,7 +156,7 @@
           }
           const info = row && rowInfo(row);
           if (!info) continue;
-          const text = info.productCell.textContent.trim();
+          const text = productText(info.productCell);
           const products = text === 'Nhiều sản phẩm'
             ? await readMultiProductOrder(info, context) : globalThis.PancakePosGroups.parseListProduct(text);
           assertCurrent(context);
@@ -182,6 +191,39 @@
     if (!list) return;
     list.replaceChildren();
     setStatus(`Đã đọc ${scanned} đơn: ${result.groups.length} nhóm; ${result.unclassified.length} đơn cần xem lại.`);
+    const totals = document.createElement('section');
+    totals.className = 'pap-pos-totals';
+    const heading = document.createElement('strong');
+    heading.textContent = 'Tổng sản phẩm đã quét';
+    const table = document.createElement('table');
+    table.innerHTML = '<thead><tr><th>Sản phẩm</th><th>Tổng</th></tr></thead><tbody></tbody>';
+    const format = (value) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 3 }).format(value);
+    let kilograms = 0;
+    for (const product of result.productTotals) {
+      const row = document.createElement('tr');
+      const name = document.createElement('td');
+      name.textContent = product.name;
+      const amount = document.createElement('td');
+      amount.textContent = `${format(product.quantity)} ${product.unit === 'kg' ? 'kg' : 'đơn vị'}`;
+      row.append(name, amount);
+      table.tBodies[0].append(row);
+      if (product.unit === 'kg') kilograms += product.quantity;
+    }
+    const total = document.createElement('p');
+    total.textContent = `Tổng khối lượng: ${format(kilograms)} kg`;
+    totals.append(heading, table, total);
+    if (!result.productTotals.length) {
+      total.textContent = 'Chưa có sản phẩm đọc đủ thông tin để cộng tổng.';
+    }
+    if (result.unclassified.length || result.productTotals.some((product) => product.unit !== 'kg')) {
+      const warning = document.createElement('small');
+      warning.textContent = [result.unclassified.length
+        ? `Chưa cộng ${result.unclassified.length} đơn cần xem lại do thiếu dữ liệu sản phẩm.` : '',
+      result.productTotals.some((product) => product.unit !== 'kg')
+        ? 'Sản phẩm không có quy cách kg/g chỉ cộng số lượng, chưa tính vào tổng kg.' : ''].filter(Boolean).join(' ');
+      totals.append(warning);
+    }
+    list.append(totals);
     for (const group of result.groups) {
       const card = document.createElement('div');
       card.className = 'pap-pos-group';

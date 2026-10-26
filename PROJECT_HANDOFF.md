@@ -1,8 +1,32 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 15/10/2026. Phiên bản manifest: `0.9.8`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
+Cập nhật: 27/10/2026. Phiên bản manifest: `0.9.11`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta; không có backend được triển khai trên mạng, build tool, API key hay cookie trong dự án.
+
+## Sửa nhãn tồn kho POS 0.9.11
+
+Nguyên nhân: `readMultiProductOrder` dùng textContent cả `.ant-menu-title-content`, ghép badge “Còn thiếu: 1” vào tên `(2026) 1KG Miến Sâm Sợi Nhỏ`. Tiền tố năm không còn ở đầu nên normalizeName không bỏ được; composition giữ nhãn như một phần tên, làm tách cả tổng kg và nhóm in. Đã tái hiện parser cũ trả `1kg còn thiếu: 1(2026) miến sâm sợi nhỏ`.
+
+`productText(element)` clone DOM, chỉ bỏ `.ant-tag` có nội dung bắt đầu “Còn thiếu:”, rồi đọc text. Dùng chung cho ô đơn lẻ và từng dòng tooltip, giữ nguyên lượng mua `x N` và quy cách sản phẩm. `parseListProduct` có fallback bỏ prefix cảnh báo khi còn ranh giới rõ (space hoặc dấu ngoặc trước tên); chuỗi số dính liền không phân định được bị từ chối để tránh đoán kg. Không lấy số thiếu tồn kho làm số lượng mua.
+
+Đối chiếu POS đăng nhập: nhãn tồn kho trong chi tiết đơn là `<span class="ant-tag ...">Còn thiếu: 1</span>` đứng cạnh tên hàng. Đã đóng modal, không chọn/in/sửa đơn thật. Fixture thêm badge 1/4 không có khoảng trắng trước tên cho cả ô đơn lẻ lẫn tooltip; kiểm tra vẫn 3 nhóm 8 đơn, 16kg nhỏ/32kg to/48kg. Kết quả cũ cần Reload extension/tab và quét lại.
+
+Kiểm tra 0.9.11: 18/18 Node tests POS/summary/pricing, 13/13 Chrome POS fixture và cú pháp đạt. Console fixture không có lỗi/cảnh báo. Ảnh kiểm thử: `docs/pos-stock-label-fix-0.9.11.png`. Phiên bản cài chưa được reload bằng công cụ, cần người dùng Reload extension/tab rồi quét lại.
+
+## Tổng sản phẩm POS 0.9.10
+
+`groupOrders` bổ sung `productTotals: [{ name, unit: 'kg'|'item', quantity }]`. Cộng các entry của khóa composition đã chuẩn hóa × số đơn trong mỗi nhóm; không đọc DOM hoặc quét lại. Cùng tên khác quy cách kg/g được cộng chung, khác loại vẫn tách. Chỉ cộng đơn đọc đủ/đủ mã và rowKey; đơn unclassified không cộng một phần. Làm tròn đến 0,001kg như khóa nhóm. Kiểu trả về composition và luồng chọn/in giữ nguyên. `renderGroups` thêm `.pap-pos-totals` bên trong `#pap-pos-groups`, hiển thị bảng và tổng kg; đơn thiếu dữ liệu/không có quy cách có chú thích. Clear và quét mới xóa/thay cùng container nên không lưu tổng cũ. Unit tests kiểm tra đổi quy cách, g, alias, đơn hỗn hợp và thiếu dữ liệu; Chrome fixture kiểm tra bảng 16kg nhỏ/32kg to/48kg và Clear.
+
+Kiểm tra 0.9.10: 16/16 Node tests (POS + pricing + summary), 12/12 Chrome POS fixture, cú pháp content/popup/POS/fixture và diff whitespace đạt. Ảnh UI mô phỏng: `docs/pos-totals-0.9.10.png`. Không in đơn thật để thử.
+
+## Ghi chú theo sản phẩm 0.9.9
+
+`checkProductNote` so sánh form, hội thoại và JSON `orderProducts`; MutationObserver lọc các thay đổi DOM thuộc `.crm-platform`, cộng listener input/change cho quantity. Mỗi thay đổi hủy note/create cũ, debounce 180 ms rồi gọi `fillPrintNote(..., false, true)`. Cờ `productChange` bỏ yêu cầu free shipping nhưng tuyệt đối không gọi `submitAfterNote`; vẫn kiểm tra form còn gắn đúng DOM, hội thoại, runId và snapshot sản phẩm. Checkbox miễn phí chụp lại baseline/hủy timer để luồng giá → note → create hiện có không bị tranh tác vụ. Không chỉnh giá do riêng thay đổi sản phẩm.
+
+`sectionSummaries` WeakMap lưu summary theo section + hội thoại, giữ được sau khi editor được dựng lại. `noteWithSummary` thay hậu tố đã sinh, giữ lời dặn và dọn dấu ` | ` khi xóa hết sản phẩm. Nếu sản phẩm không hợp lệ, chưa có tóm tắt hoặc không biết phần nào do extension sinh thì không xóa tùy tiện. Chỉ điền editor, không tự lưu/tạo đơn từ thay đổi sản phẩm. Đã đối chiếu form và `.note-print-order .text-note` (Thêm ghi chú) trên Chrome đăng nhập ngày 27/10; dùng `.text-note` để mở cả ghi chú đã lưu. Bộ fixture bổ sung thêm/xóa/quantity/focus, ghi chú riêng/đã lưu, free tích sẵn, đổi nhanh và tắt/chuyển hội thoại. Có 1 observer thường trực; các observer chờ tạm vẫn phải thu hồi.
 
 ## Bảng giá Khoai 0.9.8
+
+Kiểm tra bản 0.9.9 ngày 27/10: 23/23 ca Chrome fixture (8 ca mới + 15 ca hồi quy), 58/58 Node tests, syntax content/popup/fixture và diff whitespace đều đạt. Không tạo đơn/gửi tin thật; bản mới cần Reload extension + tab. Ảnh kết quả: `docs/live-note-0.9.9.png`.
 
 `pricing.js` thêm `taroPrices`: 6kg → 240000, 10kg → 380000. `calculateDiscount` nhận chính xác tên Khoai Sọ Mán Mộc Châu sau khi bỏ quy cách/năm và chuẩn hóa khoảng trắng, cộng kg × số lượng. Tất cả dòng phải thuộc cùng bảng (miến hoặc khoai); hỗn hợp và mốc chưa khai báo trả null. Giữ kiểu kết quả `{ kilograms, targetTotal, discount }` để hai caller `adjustMienSamPrice` và `priceVerifiedForCurrentOrder` dùng nguyên luồng hiện tại. Giữ khóa storage `autoMienSamPrice` và ID popup để không mất lựa chọn cũ, chỉ đổi nhãn hiển thị sang Miến Sâm / Khoai. Không tự tích miễn phí giao hàng. Bổ sung test 3kg×2, 5kg×2, cộng nhiều dòng, không tăng giá, sai loại và đơn hỗn hợp.
 

@@ -1,5 +1,7 @@
 # Pancake Assistant Pro
 
+**0.9.9 — ghi chú theo sản phẩm:** bật **Tự điền ghi chú in** để tự mở ô ghi chú và cập nhật khi thêm, xóa hoặc sửa số lượng sản phẩm, không cần bấm Miễn phí giao hàng hay Thêm ghi chú. Các lần sửa nhanh được gộp trong khoảng 180 ms. Giữ lời dặn riêng và thay phần tóm tắt cũ; khi xóa hết sản phẩm, xóa phần tóm tắt do extension tạo trong phiên hiện tại. Nội dung được điền vào ô ghi chú để bạn xem/sửa. Tự chỉnh giá và tự tạo đơn vẫn chỉ kích hoạt khi bạn tích Miễn phí giao hàng; việc chọn sản phẩm không tự tạo đơn.
+
 **Mô tả trên Chrome:** DEV: Bố Hoàng No1
 
 Extension Chrome hỗ trợ lên đơn trên trang Hội thoại `https://pancake.vn/multi_pages` và phân nhóm đơn để in trên POS Cake `https://pos.pancake.vn/shop/.../order`. Dự án dùng Manifest V3, JavaScript thuần và CSS; không cần cài thư viện hay chạy bước build.
@@ -73,7 +75,7 @@ Bạn tự gửi. Đây là mẫu điền cố định, không kiểm tra hoặc
 | Công tắc | Mặc định | Hoạt động |
 | --- | --- | --- |
 | Hỗ trợ lên đơn | Bật | Khi bấm một hội thoại, mở **Tạo mới**, bấm **Địa chỉ**, chọn gợi ý đầu tiên nếu có. |
-| Tự điền ghi chú in | Bật | Khi **bạn** tích **Miễn phí giao hàng**, đọc sản phẩm, nhân quy cách với số lượng và điền tóm tắt vào **Ghi chú in**. |
+| Tự điền ghi chú in | Bật | Khi thêm/xóa/sửa số lượng sản phẩm, tự mở và cập nhật **Ghi chú in** theo quy cách × số lượng, không cần tích miễn phí giao hàng. |
 | Tự điều chỉnh giá Miến Sâm | Tắt | Khi **bạn** tích **Miễn phí giao hàng**, nếu mọi sản phẩm đều là Miến Sâm và tổng kg có trong bảng giá, điền mức chênh lệch vào **Giảm giá** khi tổng tiền lớn hơn giá mốc. |
 | Tự tạo đơn | Tắt | Sau bước trên, bấm **Lưu** ghi chú, chờ trình soạn đóng, rồi bấm **Tạo đơn**. Chỉ hoạt động khi **Tự điền ghi chú in** cũng bật. |
 | Chuẩn hóa tag sau tạo đơn | Tắt | Sau lần bấm **Tạo đơn** tự động hoặc thủ công, đợi Pancake xác nhận có đơn mới, rồi chỉ giữ **Đã Lên Đơn** và **Đã Gửi**. |
@@ -87,6 +89,10 @@ Bản 0.4.3 phản ứng ngay khi giao diện sẵn sàng để giảm thời gi
 Trong **Kiểm tra giao diện**, việc ghi nhận tạm dừng các thao tác tự động cho đến khi đủ 4 lần bấm hoặc bạn bấm **Dừng ghi nhận**. Bắt đầu ghi nhận không thay đổi các công tắc tính năng đã chọn.
 
 ## Phân nhóm đơn trên POS Cake
+
+**Sửa nhãn tồn kho (0.9.11):** “Còn thiếu: 1/4/…” là cảnh báo tồn kho của POS. Extension loại nhãn này khỏi tên trước khi đọc quy cách/số lượng, nên miến có hoặc không có cảnh báo vẫn cộng chung và vào cùng nhóm in. Sau khi cập nhật, Reload extension và tab POS rồi quét lại để thay kết quả cũ.
+
+**Tổng sản phẩm (0.9.10):** sau khi quét, phía trên danh sách nhóm có bảng tổng kg từng loại trên toàn bộ kết quả, cùng tổng khối lượng. Các quy cách cùng loại được cộng chung (1kg × 2 và 2kg × 1); miến sợi to/nhỏ vẫn riêng. Đơn chưa đọc đủ sản phẩm không được cộng và có cảnh báo số đơn còn thiếu. Sản phẩm không có kg/g trong tên hiển thị số đơn vị riêng. Clear xóa cả bảng tổng; quét lại tính mới, không cộng dồn lần trước.
 
 **Bản 0.9.7:** thao tác POS dừng khi tắt tính năng hoặc phát hiện URL/trạng thái lọc thay đổi; không mở in khi đang chọn nhóm. Nếu dừng giữa chừng, những đơn đã chọn vẫn giữ nguyên: dùng Clear ở bộ lọc cũ hoặc bỏ chọn trên POS trước khi quét lại. Đã tăng thời gian chờ tối đa cho bảng nổi sản phẩm tải chậm, đồng thời giữ tốc độ đọc nhanh khi nội dung sẵn có. Sau khi cập nhật, tải lại extension và tab Pancake/POS.
 
