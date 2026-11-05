@@ -20,11 +20,13 @@ $taskSourceExtension = Join-Path $taskSourceRoot 'extension'
 if (-not (Test-Path -LiteralPath (Join-Path $taskSourceExtension 'manifest.json'))) {
   throw 'Hay chay install-update.cmd tu goi ZIP Windows da dong goi (node updater/build-release.cjs), khong chay truc tiep tu source.'
 }
-if (-not (Test-Path -LiteralPath (Join-Path $taskExtension 'manifest.json'))) {
-  # Write manifest last so an interrupted first install can be retried.
-  Get-ChildItem -LiteralPath $taskSourceExtension -File | Sort-Object { $_.Name -eq 'manifest.json' } | ForEach-Object {
-    Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $taskExtension $_.Name) -Force
-  }
+Write-Host 'Hay dong cac tab Pancake/POS truoc khi cai lai. Dang chuan bi ban extension...'
+$taskDeployScript = 'require(process.argv[1]).installPackage(process.argv[2],process.argv[3]).catch(error=>{console.error(error.message);process.exitCode=1})'
+& $taskNode -e $taskDeployScript (Join-Path $PSScriptRoot 'core.cjs') $taskRoot $taskSourceExtension
+if ($LASTEXITCODE -ne 0) { throw 'Khong cai duoc extension; ban truoc da duoc giu/khoi phuc. Thu lai khi khong con trinh cap nhat dang chay.' }
+$taskMarkerPath = Join-Path $taskExtension 'update-installation.json'
+if (-not (Test-Path -LiteralPath $taskMarkerPath)) {
+  [IO.File]::WriteAllText($taskMarkerPath, (@{ installationId = [Guid]::NewGuid().ToString() } | ConvertTo-Json), $taskUtf8)
 }
 Write-Host ''
 Write-Host '1. Mo chrome://extensions, bat Developer mode.'

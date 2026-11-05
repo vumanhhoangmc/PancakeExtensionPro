@@ -135,11 +135,14 @@ async function applyBundle(root, files, { afterSwap } = {}) {
   if (await exists(path.join(extension, '.git'))) throw new Error('Không tự ghi đè checkout phát triển. Hãy dùng thư mục cài riêng.');
   for (const folder of [backup, stage]) if (await exists(folder)) { await assertDirectory(folder); await fs.rm(folder, { recursive: true }); }
   await fs.mkdir(stage);
+  const markerPath = path.join(extension, 'update-installation.json');
+  const marker = await exists(markerPath) ? await fs.readFile(markerPath) : null;
   for (const [name, bytes] of files) {
     if (!safeName(name)) throw new Error('Đường dẫn file không an toàn.');
     const file = await fs.open(path.join(stage, name), 'wx');
     try { await file.writeFile(bytes); await file.sync(); } finally { await file.close(); }
   }
+  if (marker) await durableJson(path.join(stage, 'update-installation.json'), JSON.parse(marker));
   await durableJson(path.join(root, 'update-journal.json'), { format: 1 });
   try {
     await fs.rename(extension, backup);
@@ -210,20 +213,49 @@ async function handleUpdate(root, message, options = {}) {
   await assertDirectory(root);
   return withUpdateLock(root, async () => {
     await recoverUpdate(root);
+    await assertDirectory(path.join(root, 'extension'));
+    const markerPath = path.join(root, 'extension', 'update-installation.json');
+    const marker = await exists(markerPath) && JSON.parse(await fs.readFile(markerPath, 'utf8'));
+    if (!marker || !/^[a-f0-9-]{36}$/.test(marker.installationId) || message.installationId !== marker.installationId) {
+      throw new Error('Helper và extension chưa khớp thư mục cài. Đã dừng tự cập nhật. Chạy install-update.cmd từ gói mới, Load unpacked đúng thư mục được chỉ dẫn rồi đăng ký ID đó.');
+    }
+    const reply = value => ({ ok: true, installationId: marker.installationId, ...value });
     const installed = JSON.parse(await fs.readFile(path.join(root, 'extension', 'manifest.json'), 'utf8')).version;
     versionParts(installed);
-    if (message.action === 'check' && message.loadedVersion && compareVersions(installed, message.loadedVersion) !== 0) {
-      return { ok: true, available: false, installedVersion: installed };
+    const difference = compareVersions(installed, message.loadedVersion);
+    if (difference < 0) throw new Error('Helper đang đọc bản cũ hơn extension đang chạy. Không hạ phiên bản hoặc tự nạp lại; hãy cài lại đúng thư mục.');
+    if (difference > 0) {
+      return reply({ available: false, installedVersion: installed });
     }
     const release = await latestRelease(options);
-    if (compareVersions(release.version, installed) <= 0) return { ok: true, available: false, installedVersion: installed };
-    if (message.action === 'check') return { ok: true, available: true, installedVersion: installed, version: release.version };
+    if (compareVersions(release.version, installed) <= 0) return reply({ available: false, installedVersion: installed });
+    if (message.action === 'check') return reply({ available: true, installedVersion: installed, version: release.version });
     if (message.expectedVersion !== release.version) throw new Error('Release đã đổi trong lúc kiểm tra. Sẽ thử lại lần sau.');
     const bytes = await githubRequest(`${API}/releases/assets/${release.asset.id}`, { ...options, binary: true });
     if (bytes.length !== release.asset.size || `sha256:${hash(bytes)}` !== release.asset.digest) throw new Error('Checksum gói khác với GitHub.');
     const files = validateBundle(JSON.parse(bytes), release.version);
     await applyBundle(root, files, options);
-    return { ok: true, available: false, installedVersion: release.version };
+    return reply({ available: false, installedVersion: release.version });
   });
 }
-module.exports = { REPO, ASSET, MAX_BUNDLE, hash, compareVersions, safeName, validateBundle, githubRequest, latestRelease, applyBundle, recoverUpdate, handleUpdate };
+
+async function installPackage(root, source) {
+  await assertDirectory(root);
+  return withUpdateLock(root, async () => {
+    await recoverUpdate(root);
+    const sourceManifest = JSON.parse(await fs.readFile(path.join(source, 'manifest.json'), 'utf8'));
+    const currentPath = path.join(root, 'extension', 'manifest.json');
+    if (await exists(currentPath)) {
+      const current = JSON.parse(await fs.readFile(currentPath, 'utf8'));
+      if (compareVersions(sourceManifest.version, current.version) <= 0) return;
+    }
+    const files = [];
+    for (const name of await fs.readdir(source)) {
+      if (!safeName(name)) throw new Error('Gói cài chứa file không được phép.');
+      const bytes = await fs.readFile(path.join(source, name));
+      files.push({ path: name, sha256: hash(bytes), data: bytes.toString('base64') });
+    }
+    await applyBundle(root, validateBundle({ format: 1, version: sourceManifest.version, files }, sourceManifest.version));
+  });
+}
+module.exports = { REPO, ASSET, MAX_BUNDLE, hash, compareVersions, safeName, validateBundle, githubRequest, latestRelease, applyBundle, recoverUpdate, handleUpdate, installPackage };

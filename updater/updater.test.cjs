@@ -6,11 +6,15 @@ const path = require('node:path');
 const { PassThrough } = require('node:stream');
 const { spawn, execFile } = require('node:child_process');
 const { promisify } = require('node:util');
-const { hash, compareVersions, validateBundle, githubRequest, handleUpdate, recoverUpdate } = require('./core.cjs');
+const { hash, compareVersions, validateBundle, githubRequest, handleUpdate: rawHandleUpdate, recoverUpdate, installPackage } = require('./core.cjs');
 const { buildRelease } = require('./build-release.cjs');
 const { readNativeMessage, encodeNativeMessage } = require('./host.cjs');
 const source = path.resolve(__dirname, '..');
 const sourceVersion = require('../manifest.json').version;
+const INSTALLATION_ID = '11111111-1111-4111-8111-111111111111';
+async function handleUpdate(root, message, options) {
+  return rawHandleUpdate(root, { installationId: INSTALLATION_ID, loadedVersion: '0.10.0', ...message }, options);
+}
 
 async function temporary(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'pancake-update-test-'));
@@ -28,6 +32,7 @@ async function installation(t) {
   await fs.mkdir(path.join(root, 'extension'));
   await fs.writeFile(path.join(root, 'extension', 'manifest.json'), JSON.stringify({ version: '0.10.0' }));
   await fs.writeFile(path.join(root, 'extension', 'old.js'), '// old');
+  await fs.writeFile(path.join(root, 'extension', 'update-installation.json'), JSON.stringify({ installationId: INSTALLATION_ID }));
   return root;
 }
 function remote(payload = bundle(), change = {}) {
@@ -78,7 +83,8 @@ test('check is read-only, apply replaces complete directory, and downgrade is ig
   assert.equal(applied.installedVersion, '0.10.1');
   await assert.rejects(fs.access(path.join(root, 'extension/old.js')));
   assert.equal(await fs.readFile(path.join(root, 'update-backup/old.js'), 'utf8'), '// old');
-  const older = await handleUpdate(root, { action: 'apply', expectedVersion: '0.9.11' }, { fetcher: remote(bundle('0.9.11')) });
+  assert.equal(JSON.parse(await fs.readFile(path.join(root, 'extension/update-installation.json'))).installationId, INSTALLATION_ID);
+  const older = await handleUpdate(root, { action: 'apply', expectedVersion: '0.9.11', loadedVersion: '0.10.1' }, { fetcher: remote(bundle('0.9.11')) });
   assert.equal(older.available, false);
   assert.equal(older.installedVersion, '0.10.1');
 });
@@ -246,7 +252,7 @@ test('Windows installer copies managed files and binds ID without admin (registr
 test('Windows OS mutex prevents parallel native hosts and releases on host crash', { skip: process.platform !== 'win32' }, async t => {
   const root = await installation(t);
   const childScript = `const {handleUpdate}=require(process.env.PANCAKE_TEST_CORE);
-    handleUpdate(process.env.PANCAKE_TEST_ROOT,{action:'check'},{fetcher:()=>{
+    handleUpdate(process.env.PANCAKE_TEST_ROOT,{action:'check',installationId:'11111111-1111-4111-8111-111111111111',loadedVersion:'0.10.0'},{fetcher:()=>{
       process.stdout.write('HOLDING'); return new Promise(()=>{});
     }}).catch(()=>process.exit(1));`;
   const child = spawn(process.execPath, ['-e', childScript], { windowsHide: true,
@@ -293,4 +299,25 @@ test('junction in an ancestor still cannot redirect updates into another directo
   const indirect = path.join(parent, path.basename(target));
   await assert.rejects(handleUpdate(indirect, { action: 'check' }, { fetcher: remote() }), /liên kết/);
   assert.equal(await fs.readFile(path.join(target, 'extension/old.js'), 'utf8'), '// old');
+});
+
+test('helper rejects old worker, wrong folder identity and newer running version before network', async t => {
+  const root = await installation(t);
+  const options = { fetcher: () => { throw new Error('must not access network'); } };
+  await assert.rejects(rawHandleUpdate(root, { action: 'check', loadedVersion: '0.10.1' }, options), /thư mục/);
+  await assert.rejects(handleUpdate(root, { action: 'check', loadedVersion: '0.10.1' }, options), /cũ hơn/);
+  await assert.rejects(handleUpdate(root, { action: 'apply', expectedVersion: '0.10.2', installationId: '22222222-2222-4222-8222-222222222222' }, options), /thư mục/);
+  assert.equal(JSON.parse(await fs.readFile(path.join(root, 'extension/manifest.json'))).version, '0.10.0');
+});
+
+test('reinstall upgrades existing managed extension and preserves installation identity; never downgrades', async t => {
+  const root = await installation(t), output = await temporary(t);
+  const { packageRoot } = await buildRelease(source, output);
+  await installPackage(root, path.join(packageRoot, 'extension'));
+  assert.equal(JSON.parse(await fs.readFile(path.join(root, 'extension/manifest.json'))).version, sourceVersion);
+  assert.equal(JSON.parse(await fs.readFile(path.join(root, 'extension/update-installation.json'))).installationId, INSTALLATION_ID);
+  const older = path.join(output, 'older'); await fs.mkdir(older);
+  await fs.writeFile(path.join(older, 'manifest.json'), JSON.stringify({ version: '0.9.11' }));
+  await installPackage(root, older);
+  assert.equal(JSON.parse(await fs.readFile(path.join(root, 'extension/manifest.json'))).version, sourceVersion);
 });

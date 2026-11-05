@@ -1,6 +1,14 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 05/11/2026. Phiên bản manifest: `0.10.1`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta và helper Native Messaging cho cập nhật Windows; không có backend được triển khai trên mạng, API key hay cookie trong dự án. Không cần build để phát triển; có script đóng gói dành riêng cho GitHub Releases.
+Cập nhật: 05/11/2026. Phiên bản manifest: `0.10.2`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta và helper Native Messaging cho cập nhật Windows; không có backend được triển khai trên mạng, API key hay cookie trong dự án. Không cần build để phát triển; có script đóng gói dành riêng cho GitHub Releases.
+
+## Chặn vòng lặp cập nhật 0.10.2
+
+Triệu chứng thật: worker đang chạy 0.10.1 nhưng helper đọc `%LOCALAPPDATA%\PancakeAssistantPro\extension` bản 0.10.0. Điều kiện `installedVersion !== loaded` cũ coi cả bản thấp hơn là sẵn sàng và reload không đổi thư mục, dẫn tới lặp. Worker nay so số phiên bản, chặn hạ bản và dữ liệu thiếu, kiểm tra marker `update-installation.json` cùng helper trước check/apply, đọc manifest của chính folder trước reload. `extensionUpdateReload: { from, to }` lưu trước reload để worker mới không lặp nếu loaded vẫn không đổi; thành công/current mới xóa guard. Lỗi không giữ pending nên đóng tab không kích tiếp.
+
+Helper yêu cầu installationId và loadedVersion, chặn bản đang chạy mới hơn bản quản lý ngay trước truy cập mạng. Marker UUID được installer sinh tại máy, applyBundle giữ qua stage/swap/rollback; không nhận marker từ release. Installer gọi `installPackage` để nâng bản đã cài nếu source mới hơn, không bỏ qua folder cũ như trước; dùng mutex/journal, giữ marker và không downgrade. Cần chạy lại ZIP/installer 0.10.2 một lần để nâng helper và Load unpacked đúng folder được in ra, nhập ID của bản quản lý. Source không có marker nên tự cập nhật bị dừng rõ ràng.
+
+Đã vá riêng helper core đang cài trên máy trong phiên này để nó từ chối giao thức/folder cũ, không yêu cầu reload tiếp; lưu bản gốc `updater/core.before-0.10.2.cjs`. Kiểm tra qua framing native vào host thật xác nhận trả lỗi an toàn. Không thay ID đã đăng ký, token, công tắc hoặc tab đang làm việc. Bản mới cần người dùng chạy installer và nạp đúng thư mục; không tự phát hành GitHub.
 
 ## Sửa đường dẫn Windows 0.10.1
 

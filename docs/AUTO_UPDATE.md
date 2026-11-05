@@ -1,5 +1,13 @@
 # Cập nhật qua GitHub — Windows / Chrome
 
+## Sửa vòng lặp cập nhật ở bản 0.10.0 / 0.10.1
+
+Nếu popup ghi **Bản 0.10.1** nhưng lại báo **Bản 0.10.0 đã sẵn sàng**, helper đang quản lý thư mục khác với bản Chrome đang mở. Bản cũ dùng điều kiện “khác phiên bản” nên có thể reload liên tục. Bản 0.10.2 chặn bản thấp hơn, kiểm tra dấu nhận diện cài đặt và manifest của chính extension, chỉ thử reload một lần cho mỗi cặp phiên bản; nếu không đổi thì dừng và báo lỗi.
+
+Để sửa: đóng các tab Pancake/POS, tải ZIP Windows **0.10.2 trở lên**, giải nén và chạy `install-update.cmd`. Trình cài nâng bản sẵn có trong `%LOCALAPPDATA%\PancakeAssistantPro\extension` (giữ nhận diện cài và không hạ bản mới hơn). Tắt bản cũ đang nạp từ thư mục source/Downloads; Load unpacked đúng thư mục được trình cài in ra. Sao chép ID từ **bản đó** để nhập vào trình cài. Token đã lưu được giữ; Enter bỏ qua nếu không muốn thay. Không bật hai bản cùng lúc.
+
+Sau bản sửa giao thức này cần chạy lại installer một lần để nâng helper. File `update-installation.json` chỉ sinh tại máy khi cài; không có trong gói Release, không chứa token. Mỗi lần cập nhật giữ file này để xác nhận worker và helper thuộc cùng một thư mục cài. Nếu tự sao chép folder hoặc helper vẫn cũ, popup sẽ yêu cầu cài lại và không tự reload.
+
 ## Cài một lần trên mỗi máy
 
 1. Cài **Node.js 22 trở lên** nếu máy chưa có. Giữ Node.js sau khi cài trình cập nhật.

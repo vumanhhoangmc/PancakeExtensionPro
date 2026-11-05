@@ -8,7 +8,9 @@ Extension Chrome hỗ trợ lên đơn trên trang Hội thoại `https://pancak
 
 ## Cài trên máy khác
 
-**0.10.1:** sửa lỗi phát hành/cập nhật trên Windows có tên thư mục ngắn 8.3 (ví dụ `RUNNER~1`). Đường dẫn này được nhận đúng; symlink/junction thật vẫn bị chặn. Tag phát hành tiếp theo: `v0.10.1`.
+**0.10.2:** chặn vòng lặp reload khi helper và extension đọc hai thư mục khác nhau, chặn nạp bản cũ hơn và giới hạn mỗi lần đổi phiên bản chỉ thử reload một lần. Máy đã cài 0.10.0/0.10.1 cần chạy lại **gói cài Windows mới** một lần; trình cài sẽ nâng bản trong thư mục quản lý và đăng ký đúng ID. Bản Load unpacked trực tiếp từ source không tự cập nhật. Xem phần xử lý vòng lặp trong [hướng dẫn](docs/AUTO_UPDATE.md).
+
+**0.10.1:** sửa lỗi phát hành/cập nhật trên Windows có tên thư mục ngắn 8.3 (ví dụ `RUNNER~1`). Đường dẫn này được nhận đúng; symlink/junction thật vẫn bị chặn.
 
 **Từ 0.10.0 — tự cập nhật qua GitHub trên Windows:** tải gói `PancakeAssistantPro-Windows.zip` từ [Releases](https://github.com/vumanhhoangmc/PancakeExtensionPro/releases), giải nén và chạy `install-update.cmd`. Cần Node.js 22 trở lên. Trình cài hướng dẫn Load unpacked từ thư mục riêng trong `%LOCALAPPDATA%` và đăng ký ID extension; sau đó Chrome tự kiểm tra mỗi giờ và tự cập nhật/nạp lại khi đã đóng các tab Pancake/POS. Repo riêng tư cần token chỉ đọc Releases, được mã hóa theo tài khoản Windows. Xem [hướng dẫn cài và phát hành](docs/AUTO_UPDATE.md). Lần đầu chuyển từ thư mục cũ cần tắt bản cũ và chọn lại các công tắc; các lần cập nhật sau giữ nguyên cài đặt. Cơ chế này chỉ hoạt động sau khi repo có Release ổn định kèm gói cập nhật.
 
