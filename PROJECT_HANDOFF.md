@@ -1,6 +1,10 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
-Cập nhật: 05/11/2026. Phiên bản manifest: `0.10.0`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta và helper Native Messaging cho cập nhật Windows; không có backend được triển khai trên mạng, API key hay cookie trong dự án. Không cần build để phát triển; có script đóng gói dành riêng cho GitHub Releases.
+Cập nhật: 05/11/2026. Phiên bản manifest: `0.10.1`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta và helper Native Messaging cho cập nhật Windows; không có backend được triển khai trên mạng, API key hay cookie trong dự án. Không cần build để phát triển; có script đóng gói dành riêng cho GitHub Releases.
+
+## Sửa đường dẫn Windows 0.10.1
+
+Run GitHub Actions `41995380930` thất bại tại Verify: máy runner dùng `%TEMP%` qua tên ngắn `RUNNER~1`, `realpath` trả `runneradmin`; `assertDirectory` cũ so chuỗi nên nhầm alias thành junction. Sửa bằng lstat từng thành phần đường dẫn đến root, không so cách viết. Vẫn từ chối liên kết ở thư mục đích lẫn ancestor. Test installer so realpath hai đường dẫn file host để chấp nhận tên ngắn/dài; test đóng gói đọc version từ manifest để không chặn các release sau. Thêm hồi quy 8.3 thật trên Windows (đã thấy thất bại trước sửa) và junction ở ancestor. Chuẩn bị phát hành `v0.10.1`; không cần đổi/xóa tag `v0.10.0` đã lỗi. Không sửa luồng DOM Pancake.
 
 ## Tự cập nhật GitHub 0.10.0
 

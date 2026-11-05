@@ -97,9 +97,16 @@ async function latestRelease(options = {}) {
 
 async function exists(file) { return fs.lstat(file).then(() => true, error => { if (error.code === 'ENOENT') return false; throw error; }); }
 async function assertDirectory(directory) {
-  const info = await fs.lstat(directory);
-  if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('Thư mục cập nhật không được là liên kết.');
-  if (path.resolve(await fs.realpath(directory)).toLowerCase() !== path.resolve(directory).toLowerCase()) throw new Error('Đường dẫn cập nhật đi qua liên kết.');
+  // Windows 8.3 aliases (RUNNER~1) can differ from realpath without being
+  // links. Inspect every component instead of comparing spelling.
+  let current = path.resolve(directory);
+  while (true) {
+    const info = await fs.lstat(current);
+    if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('Đường dẫn cập nhật đi qua liên kết hoặc không phải thư mục.');
+    const parent = path.dirname(current);
+    if (parent === current) return;
+    current = parent;
+  }
 }
 async function durableJson(file, value) {
   const handle = await fs.open(file, 'w');

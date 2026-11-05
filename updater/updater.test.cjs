@@ -4,11 +4,13 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const { PassThrough } = require('node:stream');
-const { spawn } = require('node:child_process');
+const { spawn, execFile } = require('node:child_process');
+const { promisify } = require('node:util');
 const { hash, compareVersions, validateBundle, githubRequest, handleUpdate, recoverUpdate } = require('./core.cjs');
 const { buildRelease } = require('./build-release.cjs');
 const { readNativeMessage, encodeNativeMessage } = require('./host.cjs');
 const source = path.resolve(__dirname, '..');
+const sourceVersion = require('../manifest.json').version;
 
 async function temporary(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'pancake-update-test-'));
@@ -43,10 +45,10 @@ test('Chrome versions compare numerically, validate bounds, and reject prereleas
 
 test('real release builds with all manifest/HTML dependencies and excludes secrets/tests', async t => {
   const output = await temporary(t);
-  const result = await buildRelease(source, output, 'v0.10.0');
-  assert.equal(result.version, '0.10.0');
+  const result = await buildRelease(source, output, `v${sourceVersion}`);
+  assert.equal(result.version, sourceVersion);
   const payload = JSON.parse(await fs.readFile(path.join(output, 'pancake-update.json')));
-  const files = validateBundle(payload, '0.10.0');
+  const files = validateBundle(payload, sourceVersion);
   assert(files.has('pricing.js') && files.has('popup-update.js') && files.has('ai-protocol.cjs'));
   assert(![...files.keys()].some(name => /test|token|config|install/.test(name)));
   await assert.rejects(buildRelease(source, output, 'v0.9.11'), /Tag/);
@@ -236,8 +238,8 @@ test('Windows installer copies managed files and binds ID without admin (registr
   const registration = JSON.parse(await fs.readFile(path.join(installed, 'updater/native-host.json'), 'utf8'));
   assert.equal(config.extensionId, 'a'.repeat(32));
   assert.deepEqual(registration.allowed_origins, [`chrome-extension://${'a'.repeat(32)}/`]);
-  assert.equal(JSON.parse(await fs.readFile(path.join(installed, 'extension/manifest.json'))).version, '0.10.0');
-  assert.equal(registration.path, path.join(installed, 'updater/host.cmd'));
+  assert.equal(JSON.parse(await fs.readFile(path.join(installed, 'extension/manifest.json'))).version, sourceVersion);
+  assert.equal((await fs.realpath(registration.path)).toLowerCase(), (await fs.realpath(path.join(installed, 'updater/host.cmd'))).toLowerCase());
   await assert.rejects(fs.access(path.join(installed, 'github-token.xml')));
 });
 
@@ -260,4 +262,35 @@ test('Windows OS mutex prevents parallel native hosts and releases on host crash
   child.kill(); await exited;
   const recovered = await handleUpdate(root, { action: 'check' }, { fetcher: remote() });
   assert.equal(recovered.installedVersion, '0.10.0');
+});
+
+test('Windows short 8.3 aliases are valid install paths, not junctions', { skip: process.platform !== 'win32' }, async t => {
+  const root = await installation(t);
+  const longRoot = path.join(path.dirname(root), `Long Directory For Updater Alias ${path.basename(root)}`);
+  await fs.rename(root, longRoot);
+  t.after(() => fs.rm(longRoot, { recursive: true, force: true }));
+  const script = `Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices;
+    public class PancakeShortPath { [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+    public static extern uint GetShortPathName(string path, StringBuilder buffer, uint length); }';
+    $buffer=[Text.StringBuilder]::new(32768);
+    if ([PancakeShortPath]::GetShortPathName($env:PANCAKE_TEST_PATH,$buffer,32768) -eq 0) { throw 'GetShortPathName failed' };
+    [Console]::Out.Write($buffer.ToString())`;
+  const { stdout } = await promisify(execFile)('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+    windowsHide: true, timeout: 10000, env: { ...process.env, PANCAKE_TEST_PATH: longRoot }
+  });
+  const shortRoot = stdout.trim();
+  if (shortRoot.toLowerCase() === (await fs.realpath(longRoot)).toLowerCase()) { t.skip('8.3 aliases disabled on this volume'); return; }
+  const check = await handleUpdate(shortRoot, { action: 'check' }, { fetcher: remote() });
+  assert.equal(check.available, true);
+  const applied = await handleUpdate(shortRoot, { action: 'apply', expectedVersion: '0.10.1' }, { fetcher: remote() });
+  assert.equal(applied.installedVersion, '0.10.1');
+});
+
+test('junction in an ancestor still cannot redirect updates into another directory', async t => {
+  const root = await temporary(t), target = await installation(t);
+  const parent = path.join(root, 'linked-parent');
+  await fs.symlink(path.dirname(target), parent, process.platform === 'win32' ? 'junction' : 'dir');
+  const indirect = path.join(parent, path.basename(target));
+  await assert.rejects(handleUpdate(indirect, { action: 'check' }, { fetcher: remote() }), /liên kết/);
+  assert.equal(await fs.readFile(path.join(target, 'extension/old.js'), 'utf8'), '// old');
 });
