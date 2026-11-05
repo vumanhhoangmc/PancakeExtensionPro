@@ -1,0 +1,38 @@
+name: Windows release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify
+        shell: pwsh
+        run: |
+          node --check content.js
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node --check popup.js
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node --check update-worker.js
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node --test product-summary.test.js pricing.test.js updater/updater.test.cjs update-worker.test.cjs
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Package
+        shell: pwsh
+        run: |
+          node updater/build-release.cjs
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Compress-Archive -LiteralPath dist/PancakeAssistantPro -DestinationPath dist/PancakeAssistantPro-Windows.zip
+      - name: Publish stable release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$env:GITHUB_REF_NAME" dist/pancake-update.json dist/PancakeAssistantPro-Windows.zip --verify-tag --title "Pancake Assistant Pro $env:GITHUB_REF_NAME" --notes-file docs/AUTO_UPDATE.md
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }

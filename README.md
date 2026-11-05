@@ -8,6 +8,10 @@ Extension Chrome hỗ trợ lên đơn trên trang Hội thoại `https://pancak
 
 ## Cài trên máy khác
 
+**Từ 0.10.0 — tự cập nhật qua GitHub trên Windows:** tải gói `PancakeAssistantPro-Windows.zip` từ [Releases](https://github.com/vumanhhoangmc/PancakeExtensionPro/releases), giải nén và chạy `install-update.cmd`. Cần Node.js 22 trở lên. Trình cài hướng dẫn Load unpacked từ thư mục riêng trong `%LOCALAPPDATA%` và đăng ký ID extension; sau đó Chrome tự kiểm tra mỗi giờ và tự cập nhật/nạp lại khi đã đóng các tab Pancake/POS. Repo riêng tư cần token chỉ đọc Releases, được mã hóa theo tài khoản Windows. Xem [hướng dẫn cài và phát hành](docs/AUTO_UPDATE.md). Lần đầu chuyển từ thư mục cũ cần tắt bản cũ và chọn lại các công tắc; các lần cập nhật sau giữ nguyên cài đặt. Cơ chế này chỉ hoạt động sau khi repo có Release ổn định kèm gói cập nhật.
+
+Cách cài thủ công cho phát triển, không tự cập nhật:
+
 1. Sao chép **toàn bộ thư mục dự án** sang máy mới, giữ nguyên các file cùng cấp với `manifest.json`.
 2. Mở Chrome tại `chrome://extensions`, bật **Chế độ dành cho nhà phát triển**.
 3. Bấm **Tải tiện ích đã giải nén** và chọn thư mục chứa `manifest.json`.
@@ -115,15 +119,15 @@ Dùng chung công tắc **Tự điều chỉnh giá Miến Sâm / Khoai**. Khi b
 
 | Tổng kg | Giá |
 | --- | ---: |
-| 1kg | 95.000đ |
-| 2kg | 160.000đ |
-| 3kg | 220.000đ |
-| 4kg | 280.000đ |
-| 5kg | 350.000đ |
-| 6kg | 420.000đ |
+| 1kg | 90.000đ |
+| 2kg | 140.000đ |
+| 3kg | 199.000đ |
+| 4kg | 260.000đ |
+| 5kg | 325.000đ |
+| 6kg | 390.000đ |
 | 10kg | 600.000đ |
 
-Extension đọc quy cách từ tên từng sản phẩm, nhân với số lượng rồi cộng tổng kg, không phân biệt sợi to hay nhỏ. Tên **Miến Sợi Nhỏ/To** cũng được tính vì trên Pancake có biến thể này thiếu chữ “Sâm”; các loại miến khác không được tính. Ví dụ 3kg có **Tổng giá trị đơn hàng** 240.000đ sẽ nhập **Giảm giá** 20.000đ để tổng cuối là 220.000đ. Mức giảm được nhập là số tiền tuyệt đối, không cộng dồn qua các lần chạy. Nếu tổng tiền đã bằng hoặc thấp hơn giá mốc, extension không chỉnh giảm giá. Đơn có sản phẩm khác, thiếu quy cách hoặc tổng 7–9kg sẽ được bỏ qua; các khối lượng không có trong bảng cũng vậy. Công tắc này hoạt động độc lập với **Tự điền ghi chú in**; nếu đang bật **Tự tạo đơn** mà việc điền giá đủ điều kiện không được xác nhận trên giao diện, extension sẽ không tự bấm **Tạo đơn**.
+Extension đọc quy cách từ tên từng sản phẩm, nhân với số lượng rồi cộng tổng kg, không phân biệt sợi to hay nhỏ. Tên **Miến Sợi Nhỏ/To** cũng được tính vì trên Pancake có biến thể này thiếu chữ “Sâm”; các loại miến khác không được tính. Ví dụ 3kg có **Tổng giá trị đơn hàng** 240.000đ sẽ nhập **Giảm giá** 41.000đ để tổng cuối là 199.000đ. Mức giảm được nhập là số tiền tuyệt đối, không cộng dồn qua các lần chạy. Nếu tổng tiền đã bằng hoặc thấp hơn giá mốc, extension không chỉnh giảm giá. Đơn có sản phẩm khác, thiếu quy cách hoặc tổng 7–9kg sẽ được bỏ qua; các khối lượng không có trong bảng cũng vậy. Công tắc này hoạt động độc lập với **Tự điền ghi chú in**; nếu đang bật **Tự tạo đơn** mà việc điền giá đủ điều kiện không được xác nhận trên giao diện, extension sẽ không tự bấm **Tạo đơn**.
 
 ### Ví dụ ghi chú
 

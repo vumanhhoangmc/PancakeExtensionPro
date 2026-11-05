@@ -1,0 +1,7 @@
+[
+  "manifest.json", "ai-beta.css", "ai-beta.html", "ai-beta.js", "ai-bridge.cjs",
+  "ai-order-dom.js", "ai-order-plan.js", "ai-protocol.cjs", "chat-content.js",
+  "chat-reader.js", "comment-followup.js", "comment-reply.js", "content.js",
+  "popup.css", "popup.html", "popup.js", "popup-update.js", "update-worker.js",
+  "pos-content.css", "pos-content.js", "pos-groups.js", "pricing.js", "product-summary.js"
+]

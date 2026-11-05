@@ -85,7 +85,19 @@
         <p class="pos-hint">Sau khi bật, mở trang Đơn hàng của POS Cake và bấm “Phân nhóm đơn” ở góc dưới bên phải.</p>
       </section>
       <p id="site-status" role="status"></p>
+      <section class="diagnostics" aria-label="Cập nhật extension">
+        <h2>Cập nhật qua GitHub</h2>
+        <p id="update-status" role="status">Đang đọc trạng thái cập nhật…</p>
+        <button id="check-update" type="button">Kiểm tra bản mới</button>
+        <details>
+          <summary>Cài trình cập nhật trên máy này</summary>
+          <p>Chạy install-update.cmd trong gói cài Windows, rồi nhập ID bên dưới. Cần Node.js 22 trở lên. Bản mới tự áp dụng sau khi đóng các tab Pancake/POS.</p>
+          <p>ID extension: <code id="update-extension-id"></code></p>
+          <p><a href="https://github.com/vumanhhoangmc/PancakeExtensionPro/releases" target="_blank" rel="noreferrer">Mở bản phát hành GitHub</a></p>
+        </details>
+      </section>
     </main>
     <script src="popup.js"></script>
+    <script src="popup-update.js"></script>
   </body>
 </html>

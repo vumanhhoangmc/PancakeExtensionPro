@@ -196,7 +196,7 @@ const tests = [
     draft([small(1), large(1)], 240000, { autoSubmitOrder: true, autoOrderTags: true });
     const started = performance.now(); tick();
     await until(() => state.created === 1 && selectedTags().join(',') === 'Đã Lên Đơn,Đã Gửi');
-    assert(state.discount === 20000 && state.savedNote === '1kg miến sâm nhỏ + 2kg miến sâm to', 'Giá/ghi chú sai');
+    assert(state.discount === 41000 && state.savedNote === '1kg miến sâm nhỏ + 2kg miến sâm to', 'Giá/ghi chú sai');
     await delay(200); assert(state.created === 1, 'Tạo đơn lặp');
     return `ghi chú và tạo đơn hoàn tất trong ${Math.round(performance.now() - started - 200)} ms trên mô phỏng`;
   }],
@@ -218,7 +218,7 @@ const tests = [
     assert(state.discount === 0, 'Chỉnh giá 7kg');
   }],
   ['Giá thấp hơn mốc: giữ giảm giá hiện có', async () => {
-    draft([small(3)], 200000, {}, { discount: 1000 }); tick(); await until(() => !!panel.querySelector('textarea')?.value);
+    draft([small(3)], 190000, {}, { discount: 1000 }); tick(); await until(() => !!panel.querySelector('textarea')?.value);
     assert(state.discount === 1000, 'Ghi đè giảm giá');
   }],
   ['Tắt ghi chú và giá: không sửa form', async () => {
