@@ -1,5 +1,13 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
+## Bố cục thu gọn 0.10.3 — 07/11/2026
+
+Kiểm chứng: 26/26 Chrome fixture, 9/9 pricing/summary Node tests, cú pháp content/popup/fixture và git diff --check đạt. Đóng gói tag v0.10.3 thành công; chưa publish hoặc reload extension thật. Cần tải lại extension và tab sau cập nhật.
+
+Đối chiếu trực tiếp đơn nháp người dùng tại viewport 1094×565: `.row-table-product` và tên sản phẩm vẫn khớp nhưng cột số lượng là `.table-product > .ant-col-7`, còn đơn giá là `.ant-col-8`. Selector cũ chỉ nhận `.ant-col-4` nên quantity undefined, chặn ghi chú và các bước tạo đơn tiếp theo. `orderProducts` nhận cả cột 4/7, yêu cầu đúng một input để không đoán khi mơ hồ. Không thay công tắc, không tự tích miễn phí, không sửa luồng AI Beta. Người dùng tự thêm sản phẩm; agent chỉ đọc DOM, không tạo đơn thật. Không liên quan trường hợp Pancake ẩn hẳn customerCol ở 800px.
+
+GitNexus index trên đĩa đã cập nhật HEAD da148f5; MCP còn cache cũ nên đã xác nhận impact bằng CLI. `orderProducts` risk CRITICAL: 6 caller trực tiếp gồm adjustMienSamPrice/sameOrder, fillPrintNote, priceVerifiedForCurrentOrder, productNoteState, submitAfterNote. Bổ sung fixture cột 7 kèm ô đơn giá, đổi rộng→nhỏ và hai ô mơ hồ; giữ các hồi quy hủy tác vụ/tạo đúng một đơn.
+
 Cập nhật: 05/11/2026. Phiên bản manifest: `0.10.2`. Đây là extension Chrome Manifest V3 viết bằng JavaScript thuần, chạy trên giao diện Hội thoại Pancake và Đơn hàng POS Cake. Mỗi tính năng có công tắc riêng. Trang đích là `https://pancake.vn/multi_pages` và `https://pos.pancake.vn/shop/.../order`. Có helper Node localhost cho AI Beta và helper Native Messaging cho cập nhật Windows; không có backend được triển khai trên mạng, API key hay cookie trong dự án. Không cần build để phát triển; có script đóng gói dành riêng cho GitHub Releases.
 
 ## Chặn vòng lặp cập nhật 0.10.2

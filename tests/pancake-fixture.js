@@ -134,6 +134,34 @@ reset();
 const small = quantity => ({ name: '(2026) 1KG Miến Sâm Sợi Nhỏ', quantity });
 const large = quantity => ({ name: '(2026) 2KG Miến Sâm Sợi To', quantity });
 const tests = [
+  ['Cột số lượng thu gọn: ghi chú, giảm giá và tạo đúng một đơn', async () => {
+    draft([small(3)], 240000, { autoSubmitOrder: true });
+    const table = panel.querySelector('.table-product');
+    table.querySelector('.ant-col-4').className = 'ant-col-7';
+    const price = document.createElement('div'); price.className = 'ant-col-8';
+    price.innerHTML = '<input class="ant-input-number-input" value="80000">';
+    table.append(price);
+    tick();
+    await until(() => state.created === 1);
+    assert(state.discount === 41000 && state.savedNote === '3kg miến sâm nhỏ', 'Nhầm số lượng/đơn giá');
+    await delay(250); assert(state.created === 1, 'Tạo đơn lặp');
+  }],
+  ['Đổi bố cục rộng sang nhỏ: giữ đúng số lượng và cập nhật ghi chú', async () => {
+    draft([small(1)], 95000); await until(() => state.receivedNote === '1kg miến sâm nhỏ');
+    const column = panel.querySelector('.ant-col-4'); column.className = 'ant-col-7';
+    const input = column.querySelector('input'); input.value = '2';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await until(() => state.receivedNote === '2kg miến sâm nhỏ');
+    assert(state.created === 0, 'Tự tạo đơn khi đổi bố cục');
+  }],
+  ['Hai ô số lượng không rõ ràng: không ghi chú hoặc tạo đơn', async () => {
+    draft([small(1)], 95000, { autoSubmitOrder: true });
+    const extra = document.createElement('div'); extra.className = 'ant-col-7';
+    extra.innerHTML = '<input class="ant-input-number-input" value="90000">';
+    panel.querySelector('.table-product').append(extra); tick();
+    await delay(350);
+    assert(!state.receivedNote && state.created === 0 && state.discount === 0, 'Đoán số lượng khi mơ hồ');
+  }],
   ['Chọn sản phẩm: tự mở/điền ghi chú khi chưa tích miễn phí, không tạo đơn', async () => {
     draft([small(1)], 95000, { autoSubmitOrder: true });
     await until(() => state.receivedNote === '1kg miến sâm nhỏ');

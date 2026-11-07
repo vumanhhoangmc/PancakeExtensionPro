@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pancake Assistant Pro",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "DEV: Bố Hoàng No1",
   "permissions": ["storage", "activeTab", "alarms", "nativeMessaging"],
   "background": { "service_worker": "update-worker.js" },

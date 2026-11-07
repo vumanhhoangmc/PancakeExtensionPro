@@ -1,5 +1,7 @@
 # Pancake Assistant Pro
 
+**0.10.3 — cửa sổ nhỏ:** sửa đọc số lượng khi Pancake đổi sang bố cục thu gọn, giúp ghi chú, chỉnh giá và tự tạo đơn tiếp tục hoạt động. Các công tắc và điều kiện tích Miễn phí giao hàng giữ nguyên. Sau cập nhật thủ công cần tải lại extension và tab Pancake.
+
 **0.9.9 — ghi chú theo sản phẩm:** bật **Tự điền ghi chú in** để tự mở ô ghi chú và cập nhật khi thêm, xóa hoặc sửa số lượng sản phẩm, không cần bấm Miễn phí giao hàng hay Thêm ghi chú. Các lần sửa nhanh được gộp trong khoảng 180 ms. Giữ lời dặn riêng và thay phần tóm tắt cũ; khi xóa hết sản phẩm, xóa phần tóm tắt do extension tạo trong phiên hiện tại. Nội dung được điền vào ô ghi chú để bạn xem/sửa. Tự chỉnh giá và tự tạo đơn vẫn chỉ kích hoạt khi bạn tích Miễn phí giao hàng; việc chọn sản phẩm không tự tạo đơn.
 
 **Mô tả trên Chrome:** DEV: Bố Hoàng No1

@@ -203,10 +203,15 @@
   function orderProducts() {
     return [...document.querySelectorAll('.crm-platform .view-order .row-table-product')]
       .filter(visible)
-      .map((row) => ({
-        name: row.querySelector('.col-product-name .info-order-item > .font-weight-500')?.textContent?.trim(),
-        quantity: row.querySelector('.table-product > .ant-col-4 input.ant-input-number-input')?.value
-      }));
+      .map((row) => {
+        // Pancake changes the quantity column width in its compact order layout.
+        // Require one match so an unfamiliar layout cannot supply a price as quantity.
+        const quantities = row.querySelectorAll('.table-product > :is(.ant-col-4, .ant-col-7) input.ant-input-number-input');
+        return {
+          name: row.querySelector('.col-product-name .info-order-item > .font-weight-500')?.textContent?.trim(),
+          quantity: quantities.length === 1 ? quantities[0].value : undefined
+        };
+      });
   }
 
   function waitForNote(find, id, timeoutMs = 2000) {
