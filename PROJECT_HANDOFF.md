@@ -1,5 +1,9 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
+## Giá Miến Sâm 0.10.4 — 08/11/2026
+
+Mốc 2 kg trong `pricing.js` là 155.000đ. `pricing.test.js` kiểm tra mốc mới và trường hợp tổng tiền bằng mốc. Phát hành bằng tag `v0.10.4` trên commit chứa thay đổi.
+
 ## Bố cục thu gọn 0.10.3 — 07/11/2026
 
 Kiểm chứng: 26/26 Chrome fixture, 9/9 pricing/summary Node tests, cú pháp content/popup/fixture và git diff --check đạt. Đóng gói tag v0.10.3 thành công; chưa publish hoặc reload extension thật. Cần tải lại extension và tab sau cập nhật.
@@ -234,7 +238,7 @@ Pancake từng hiển thị dòng phụ `1000 g` ngay cả cho sản phẩm tên
 
 ### 3. Điều chỉnh giá và tùy chọn tự tạo đơn
 
-Trước khi điền ghi chú, nếu `autoMienSamPrice` bật, `adjustMienSamPrice()` đọc các dòng sản phẩm, **Tổng giá trị đơn hàng** và đối chiếu bảng giá trong `pricing.js`: 1kg 90.000đ, 2kg 140.000đ, 3kg 199.000đ, 4kg 260.000đ, 5kg 325.000đ, 6kg 390.000đ, 10kg 600.000đ. Chỉ nhận đơn mà mọi tên sản phẩm là `Miến Sâm`, `Miến Sâm Sợi Nhỏ/To` hoặc biến thể `Miến Sợi Nhỏ/To` thiếu chữ “Sâm” đã thấy trên Pancake, có quy cách `kg/g` trong tên và số lượng nguyên dương. Quy cách nhân số lượng rồi cộng khối lượng, không phân biệt sợi to/nhỏ. 7–9kg và các khối lượng không có mốc được bỏ qua. Nếu tổng tiền vượt giá mốc, điền số tiền chênh lệch **tuyệt đối** vào ô Giảm giá và chờ tổng cuối bằng giá mốc. Nếu không xác nhận được, ghi chú vẫn có thể điền nhưng luồng **tự tạo đơn** không chạy. Nếu tổng tiền bằng/thấp hơn mốc, không sửa ô Giảm giá.
+Trước khi điền ghi chú, nếu `autoMienSamPrice` bật, `adjustMienSamPrice()` đọc các dòng sản phẩm, **Tổng giá trị đơn hàng** và đối chiếu bảng giá trong `pricing.js`: 1kg 90.000đ, 2kg 155.000đ, 3kg 199.000đ, 4kg 260.000đ, 5kg 325.000đ, 6kg 390.000đ, 10kg 600.000đ. Chỉ nhận đơn mà mọi tên sản phẩm là `Miến Sâm`, `Miến Sâm Sợi Nhỏ/To` hoặc biến thể `Miến Sợi Nhỏ/To` thiếu chữ “Sâm” đã thấy trên Pancake, có quy cách `kg/g` trong tên và số lượng nguyên dương. Quy cách nhân số lượng rồi cộng khối lượng, không phân biệt sợi to/nhỏ. 7–9kg và các khối lượng không có mốc được bỏ qua. Nếu tổng tiền vượt giá mốc, điền số tiền chênh lệch **tuyệt đối** vào ô Giảm giá và chờ tổng cuối bằng giá mốc. Nếu không xác nhận được, ghi chú vẫn có thể điền nhưng luồng **tự tạo đơn** không chạy. Nếu tổng tiền bằng/thấp hơn mốc, không sửa ô Giảm giá.
 
 Ô Giảm giá được cập nhật qua native setter của `HTMLInputElement`, sự kiện `input`/`change` và blur để Pancake nhận thay đổi. Không đọc giá ở chân form làm tổng trước giảm; chân form chỉ dùng để xác nhận kết quả. Logic giá bắt đầu khi **người dùng tích** Miễn phí giao hàng; extension vẫn không tự tích checkbox đó.
 

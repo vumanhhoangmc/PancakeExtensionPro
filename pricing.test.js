@@ -24,7 +24,7 @@ test('Khoai chỉ giảm ở mốc được cung cấp và không tăng giá hay
 });
 
 test('áp dụng đúng từng mốc giá', () => {
-  const prices = new Map([[1, 90000], [2, 140000], [3, 199000], [4, 260000],
+  const prices = new Map([[1, 90000], [2, 155000], [3, 199000], [4, 260000],
     [5, 325000], [6, 390000], [10, 600000]]);
   for (const [kg, target] of prices) {
     assert.deepEqual(calculateDiscount([{ name: '(2026) 1KG Miến Sâm Sợi To', quantity: kg }], target + 20000),
@@ -44,7 +44,7 @@ test('cộng số kg của các loại miến sâm và nhân số lượng', () 
 
 test('không giảm khi tổng tiền bằng hoặc dưới giá mốc', () => {
   const products = [{ name: '2KG Miến Sâm Sợi To', quantity: 1 }];
-  assert.equal(calculateDiscount(products, 140000).discount, 0);
+  assert.equal(calculateDiscount(products, 155000).discount, 0);
   assert.equal(calculateDiscount(products, 130000).discount, 0);
 });
 
