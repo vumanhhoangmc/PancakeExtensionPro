@@ -58,16 +58,35 @@ document.querySelector('#run').onclick=async()=>{
       assert(totals.textContent.includes('miến sâm nhỏ16 kg')&&totals.textContent.includes('miến sâm to32 kg')&&!document.querySelector('#pap-pos-groups').textContent.includes('Còn thiếu'),'Sai tổng/lẫn nhãn tồn kho');
     }finally{observer.disconnect();}
   });
-  await check('Chọn nhóm → nút xám vẫn bấm lại; React thay hàng checkbox',async()=>{select(cards()[0]).click();await until(()=>status().startsWith('Đã chọn 8'));assert(selection.size===8&&select(cards()[0]).classList.contains('pap-pos-selected')&&!select(cards()[0]).disabled,'Sai trạng thái');select(cards()[0]).click();await pause(100);await until(()=>status().startsWith('Đã chọn 8'));assert(selection.size===8,'Chọn lại sai');});
-  await check('Đổi nhóm bỏ hết nhóm cũ; Clear bỏ chọn và xóa kết quả',async()=>{select(cards()[1]).click();await pause(100);await until(()=>status().startsWith('Đã chọn 8'));assert(selection.size===8,'Sai số đơn');document.querySelector('#pap-pos-clear').click();await until(()=>status().startsWith('Đã xóa'));assert(selection.size===0&&cards().length===0&&!document.querySelector('.pap-pos-totals'),'Clear chưa sạch');});
+  await check('Chọn nhóm → nút xám vẫn bấm lại; React thay hàng checkbox',async()=>{select(cards()[0]).click();await until(()=>status().startsWith('Đã mở thao tác in'));assert(selection.size===8&&select(cards()[0]).classList.contains('pap-pos-selected')&&!select(cards()[0]).disabled,'Sai trạng thái');select(cards()[0]).click();await pause(100);await until(()=>status().startsWith('Đã mở thao tác in'));assert(selection.size===8,'Chọn lại sai');});
+  await check('Đổi nhóm bỏ hết nhóm cũ; Clear bỏ chọn và xóa kết quả',async()=>{select(cards()[1]).click();await pause(100);await until(()=>status().startsWith('Đã mở thao tác in'));assert(selection.size===8,'Sai số đơn');document.querySelector('#pap-pos-clear').click();await until(()=>status().startsWith('Đã xóa'));assert(selection.size===0&&cards().length===0&&!document.querySelector('.pap-pos-totals'),'Clear chưa sạch');});
   await check('Hộp thoại đã ẩn không chặn quét',async()=>{await reset(3);const m=document.createElement('div');m.className='ant-modal';m.role='dialog';m.style.display='none';stage.append(m);await scan();assert(cards().length===3,'Modal ẩn chặn');});
   await check('Tooltip tải 1 giây vẫn đọc đủ sản phẩm',async()=>{await reset(1);hoverDelay=1000;await scan();assert(cards().length===1&&status().includes('0 đơn cần xem lại'),'Bỏ sót tooltip chậm');});
-  await check('Tắt tính năng khi đang chọn: không click thêm checkbox',async()=>{await reset();await scan();let countAtStop;afterSelect=()=>{afterSelect=null;setEnabled(false);countAtStop=clicks;};select(cards()[0]).click();await until(()=>countAtStop!==undefined);await pause(800);assert(clicks===countAtStop,'Vẫn chọn đơn sau khi tắt');});
+  await check('Tắt tính năng khi đang chọn: không click thêm checkbox',async()=>{await reset();await scan();let countAtStop;afterSelect=()=>{afterSelect=null;setEnabled(false);countAtStop=clicks;};select(cards()[0]).click();await until(()=>countAtStop!==undefined);await pause(800);assert(clicks===countAtStop&&printClicks===0,'Vẫn chọn/in sau khi tắt');});
   await check('Tắt/bật nhanh giữa quét: kết quả cũ không xuất hiện lại',async()=>{await reset();hoverDelay=500;document.querySelector('#pap-pos-scan').click();await pause(100);setEnabled(false);setEnabled(true);await pause(800);assert(cards().length===0,'Kết quả cũ sống lại');});
-  await check('Đổi URL giữa chọn: dừng trước checkbox tiếp theo',async()=>{await reset();await scan();let countAtStop;afterSelect=()=>{afterSelect=null;history.replaceState(null,'','?filter=changed');countAtStop=clicks;};select(cards()[0]).click();await until(()=>countAtStop!==undefined);await pause(800);assert(clicks===countAtStop,'Vẫn chọn sau đổi bộ lọc');history.replaceState(null,'',location.pathname);});
-  await check('Đổi trạng thái lọc cùng URL: dừng chọn nhóm cũ',async()=>{await reset();await scan();let countAtStop;afterSelect=()=>{afterSelect=null;document.querySelector('.status-title').textContent='Đã gửi';countAtStop=clicks;};select(cards()[0]).click();await until(()=>countAtStop!==undefined);await pause(800);assert(clicks===countAtStop,'Vẫn chọn nhóm của trạng thái cũ');});
-  await check('Chặn in trong khi chọn lại nhóm; chỉ mở in khi đã xong',async()=>{await reset();await scan();const card=cards()[0];select(card).click();await until(()=>status().startsWith('Đã chọn 8'));select(card).click();card.querySelectorAll('button')[1].click();assert(printClicks===0,'Mở in khi còn đang chọn');await pause(100);await until(()=>status().startsWith('Đã chọn 8'));card.querySelectorAll('button')[1].click();assert(printClicks===1,'Không mở in sau hoàn tất');});
+  await check('Đổi URL giữa chọn: dừng trước checkbox tiếp theo',async()=>{await reset();await scan();let countAtStop;afterSelect=()=>{afterSelect=null;history.replaceState(null,'','?filter=changed');countAtStop=clicks;};select(cards()[0]).click();await until(()=>countAtStop!==undefined);await pause(800);assert(clicks===countAtStop&&printClicks===0,'Vẫn chọn/in sau đổi bộ lọc');history.replaceState(null,'',location.pathname);});
+  await check('Đổi trạng thái lọc cùng URL: dừng chọn nhóm cũ',async()=>{await reset();await scan();let countAtStop;afterSelect=()=>{afterSelect=null;document.querySelector('.status-title').textContent='Đã gửi';countAtStop=clicks;};select(cards()[0]).click();await until(()=>countAtStop!==undefined);await pause(800);assert(clicks===countAtStop&&printClicks===0,'Vẫn chọn/in nhóm của trạng thái cũ');});
+  await check('Chặn in trong khi chọn lại nhóm; chỉ mở in khi đã xong',async()=>{await reset();await scan();const card=cards()[0];select(card).click();await until(()=>status().startsWith('Đã mở thao tác in'));select(card).click();card.querySelectorAll('button')[1].click();assert(printClicks===1,'Mở in khi còn đang chọn');await pause(100);await until(()=>status().startsWith('Đã mở thao tác in'));assert(printClicks===2,'Không tự mở in đúng một lần sau hoàn tất');});
   await check('Chọn thiếu: chặn in và Clear bỏ được phần đã chọn',async()=>{await reset();await scan();const missing=cards()[0].querySelector('small').textContent.match(/r\d+/)[0];orders=orders.filter(o=>o.key!==missing);select(cards()[0]).click();await until(()=>status().includes('chưa đủ'));cards()[0].querySelectorAll('button')[1].click();assert(printClicks===0,'Cho in thiếu');document.querySelector('#pap-pos-clear').click();await until(()=>status().startsWith('Đã xóa'));assert(selection.size===0&&cards().length===0,'Không clear được phần chọn thiếu');});
+  await check('Thanh selection-table mới: chọn đủ rồi tự mở menu đúng một lần',async()=>{
+    await reset(3);await scan();
+    document.querySelector('.action-btn-container').className='selection-table';
+    const button=document.querySelector('#native-print');
+    button.onclick=()=>{
+      printClicks++;
+      const dialog=document.createElement('div');dialog.className='ant-modal';dialog.role='dialog';dialog.textContent='In đơn';stage.append(dialog);
+    };
+    const card=cards()[0];select(card).click();
+    await until(()=>printClicks===1);
+    assert(selection.size===1&&stage.querySelector('[role="dialog"]'),'Chưa chọn đủ/mở menu');
+    card.querySelectorAll('button')[1].click();await pause(200);
+    assert(printClicks===1,'Mở lặp khi menu đang hiện');
+  });
+  await check('Nút in bị khóa: giữ nhóm đã chọn, không mở in',async()=>{
+    await reset(3);await scan();document.querySelector('#native-print').disabled=true;
+    select(cards()[0]).click();await until(()=>status().includes('Không tìm thấy nút in'));
+    assert(selection.size===1&&printClicks===0,'Mở nút in bị khóa');
+  });
   const end=document.createElement('strong');end.textContent=`${passed}/${total} đạt — quét 24 đơn: ${report.dataset.scanMs} ms (mô phỏng)`;report.append(end);document.querySelector('#run').disabled=false;
 };
 setup();

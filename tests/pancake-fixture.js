@@ -26,6 +26,14 @@ window.MutationObserver = class extends originalObserver {
 const rows = [...document.querySelectorAll('.conversation-list-item')];
 const tabs = [...document.querySelectorAll('.tab-label-item')];
 const panel = document.querySelector('#panel');
+// The native Pancake sidebar has no .crm-platform wrapper.
+const orderPane = panel.closest('.crm-platform');
+if (location.hash === '#native') {
+  orderPane.id = 'customerCol';
+  orderPane.classList.remove('crm-platform');
+  orderPane.style.width = '500px';
+  tabs[1].textContent = 'Tạo đơn';
+}
 let generation = 0;
 let state;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -134,6 +142,41 @@ reset();
 const small = quantity => ({ name: '(2026) 1KG Miến Sâm Sợi Nhỏ', quantity });
 const large = quantity => ({ name: '(2026) 2KG Miến Sâm Sợi To', quantity });
 const tests = [
+  ['Sáu tag mặc định: chỉ giữ Mua hàng và Đã gửi sau tạo đơn', async () => {
+    draft([small(1)], 95000, { autoOrderTags: true });
+    const names = ['Kiểm hàng', 'Câu hỏi', 'Mua hàng', 'Đã gửi', 'Hết hàng', 'Trả hàng'];
+    document.querySelector('#tags').innerHTML = names.map(name =>
+      `<button class="btn-tag-item">${name === 'Kiểm hàng' || name === 'Trả hàng' ? '<span class="ellipse"></span>' : ''}${name}</button>`).join('');
+    panel.querySelector('.btn-save-order').click();
+    await until(() => selectedTags().join(',') === 'Mua hàng,Đã gửi');
+  }],
+  ['Sáu tag đổi vị trí: vẫn chọn đúng tên Mua hàng và Đã gửi', async () => {
+    draft([small(1)], 95000, { autoOrderTags: true });
+    const names = ['Đã gửi', 'Hết hàng', 'Kiểm hàng', 'Trả hàng', 'Câu hỏi', 'Mua hàng'];
+    document.querySelector('#tags').innerHTML = names.map(name =>
+      `<button class="btn-tag-item">${name === 'Hết hàng' ? '<span class="ellipse"></span>' : ''}${name}</button>`).join('');
+    panel.querySelector('.btn-save-order').click();
+    await until(() => selectedTags().join(',') === 'Đã gửi,Mua hàng');
+  }],
+  ['Đơn mới trong order-list: chỉ đổi tag sau ID mới', async () => {
+    draft([small(1)], 95000, { autoOrderTags: true });
+    const recent = document.querySelector('.recent-orders');
+    const container = document.createElement('div'); container.className = 'order-list';
+    recent.replaceWith(container); document.body.append(recent);
+    try {
+      panel.querySelector('.btn-save-order').click();
+      const card = document.createElement('div'); card.className = 'ant-collapse-header'; card.textContent = '0000554';
+      container.append(card);
+      await until(() => selectedTags().join(',') === 'Đã Lên Đơn,Đã Gửi');
+      await delay(50);
+    } finally { container.replaceWith(recent); }
+  }],
+  ['Trang mới thiếu một tag đích: giữ nguyên các tag đang tích', async () => {
+    draft([small(1)], 95000, { autoOrderTags: true });
+    [...document.querySelectorAll('.btn-tag-item')].find(e => e.textContent === 'Đã Gửi').remove();
+    panel.querySelector('.btn-save-order').click(); await delay(350);
+    assert(selectedTags().join(',') === 'Báo Giá,Miến Sâm', 'Đổi tag một phần khi chưa cấu hình đủ');
+  }],
   ['Cột số lượng thu gọn: ghi chú, giảm giá và tạo đúng một đơn', async () => {
     draft([small(3)], 240000, { autoSubmitOrder: true });
     const table = panel.querySelector('.table-product');

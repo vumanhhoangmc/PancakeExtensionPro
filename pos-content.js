@@ -313,6 +313,7 @@
     scanning = true;
     const context = operationContext();
     setStatus('Đang chọn nhóm đơn...');
+    let readyToPrint = false;
     try {
       const nativeCount = nativeSelectedCount();
       if (nativeCount === 0) selectedKeys = new Set(); // POS may clear selection after printing.
@@ -336,12 +337,13 @@
       selectedKeys = keys;
       button.classList.add('pap-pos-selected');
       button.title = 'Nhóm đã chọn. Bấm lại để chọn lại nhóm này.';
-      setStatus(`Đã chọn ${keys.size} đơn nhóm “${group.label}”. Kiểm tra mã đơn rồi bấm “In nhóm bằng POS”.`);
+      readyToPrint = true;
     } catch (error) {
       if (enabled && context.generation === generation) setStatus(error.message);
     } finally {
       scanning = false;
     }
+    if (readyToPrint && isCurrent(context)) printGroup(group);
   }
 
   async function clearGroups() {
@@ -385,8 +387,9 @@
       setStatus('Hãy chọn đúng nhóm trước khi in.');
       return;
     }
-    const print = [...document.querySelectorAll('.action-btn-container .ant-space-compact button')]
-      .find((button) => button.querySelector('svg path[d^="M214.67,72"]'));
+    const print = [...document.querySelectorAll(':is(.action-btn-container, .selection-table) .ant-space-compact button')]
+      .find((button) => !button.disabled && button.getClientRects().length &&
+        button.querySelector('svg path[d^="M214.67,72"]'));
     if (!print) {
       setStatus('Không tìm thấy nút in hàng loạt của POS.');
       return;

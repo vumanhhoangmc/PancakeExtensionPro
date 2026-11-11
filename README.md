@@ -1,5 +1,7 @@
 # Pancake Assistant Pro
 
+**0.10.5 — hỗ trợ trang mới trong hộp thư gộp:** nhận cả form Pancake có tab **Tạo đơn** và form CRM có tab **Tạo mới** để điền ghi chú, chỉnh giá, tự tạo đơn và nhận đơn mới. Trang dùng bộ sáu tag mặc định sẽ giữ **Mua hàng** và **Đã gửi** (vị trí 3, 4 hiện tại). Các trang dùng bộ tag tùy chỉnh giữ **Đã Lên Đơn**, **Đã Gửi**. Nhận diện theo tên tag. Sau cập nhật cần tải lại extension và tab Pancake.
+
 **0.10.4 — giá Miến Sâm:** đơn có tổng khối lượng 2 kg áp dụng mốc 155.000đ.
 
 **0.10.3 — cửa sổ nhỏ:** sửa đọc số lượng khi Pancake đổi sang bố cục thu gọn, giúp ghi chú, chỉnh giá và tự tạo đơn tiếp tục hoạt động. Các công tắc và điều kiện tích Miễn phí giao hàng giữ nguyên. Sau cập nhật thủ công cần tải lại extension và tab Pancake.
@@ -113,7 +115,7 @@ Nút **Clear** xóa kết quả phân nhóm và bỏ chọn các đơn do extens
 1. Trên trang **Đơn hàng** của POS Cake, đặt bộ lọc đơn cần in (ví dụ **Chưa in**).
 2. Trong popup, mở mục **POS Cake** và bật **Phân nhóm đơn để in**.
 3. Bấm nút **Phân nhóm đơn** ở góc dưới phải của trang POS, rồi bấm **Quét và phân nhóm**. Extension cuộn danh sách trong bộ lọc hiện tại; với đơn có “Nhiều sản phẩm”, nó đọc bảng nổi chứa đầy đủ tên và số lượng như khi rê chuột vào ô này. Không cần mở cửa sổ chi tiết từng đơn nên quét nhanh hơn. Quá trình này chỉ đọc đơn, không lưu hay đổi trạng thái.
-4. Chọn một nhóm, kiểm tra mã đơn, rồi bấm **In nhóm bằng POS**. Extension dùng chức năng in hàng loạt của POS để in **phiếu gốc của từng đơn** trong nhóm. Lặp lại cho các nhóm khác. POS có thể mở bước xác nhận hoặc hộp thoại máy in theo cấu hình in của bạn.
+4. Bấm **Chọn nhóm để in**. Khi đã tích đủ đơn của nhóm và xác nhận số lượng trên POS, extension tự mở menu **In đơn**. Kiểm tra mẫu in, các tùy chọn rồi bấm **Xác nhận** khi sẵn sàng. Nút **In nhóm bằng POS** cho phép mở lại menu của nhóm đã chọn. Lặp lại cho các nhóm khác.
 
 Nhóm được xác định theo **thành phần đóng gói**: khối lượng trong tên sản phẩm nhân với số lượng, tách riêng sợi nhỏ, sợi to và các sản phẩm khác. Chẳng hạn `2KG Miến Sâm Sợi To x 1` và `1KG Miến Sâm Sợi To x 2` cùng nhóm **2kg miến sâm to**; đơn gồm **2kg miến sâm nhỏ + 1kg miến sâm to** thành nhóm riêng. Tên `Miến Sợi Nhỏ/To` trên POS được hiểu là Miến Sâm tương ứng. Sản phẩm không có `kg/g` được gom theo tên và số lượng.
 

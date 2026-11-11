@@ -153,8 +153,8 @@
   }
 
   function createTab() {
-    return [...document.querySelectorAll('.crm-platform .tab-label-item')]
-      .find((element) => normalizedText(element) === 'Tạo mới' && visible(element)) || null;
+    return [...document.querySelectorAll(':is(.crm-platform, #customerCol) .tab-label-item')]
+      .find((element) => ['Tạo mới', 'Tạo đơn'].includes(normalizedText(element)) && visible(element)) || null;
   }
 
   function addressInput() {
@@ -193,15 +193,15 @@
 
       // Pancake may finish loading the conversation after our first click and restore Thông tin.
       const reverted = await waitForDom(() => {
-        const activeTab = document.querySelector('.crm-platform .tab-label-item.active');
-        return activeTab && normalizedText(activeTab) !== 'Tạo mới';
+        const activeTab = document.querySelector(':is(.crm-platform, #customerCol) .tab-label-item.active');
+        return activeTab && !['Tạo mới', 'Tạo đơn'].includes(normalizedText(activeTab));
       }, () => enabled && !recording && id === runId, 500);
       if (!reverted) return;
     }
   }
 
   function orderProducts() {
-    return [...document.querySelectorAll('.crm-platform .view-order .row-table-product')]
+    return [...document.querySelectorAll(':is(.crm-platform, #customerCol) .view-order .row-table-product')]
       .filter(visible)
       .map((row) => {
         // Pancake changes the quantity column width in its compact order layout.
@@ -232,17 +232,17 @@
   }
 
   async function fillPrintNote(id, submitId, conversationId, priceReady, productChange = false) {
-    const form = document.querySelector('.crm-platform .view-order');
+    const form = document.querySelector(':is(.crm-platform, #customerCol) .view-order');
     const current = () => autoPrintNote && !recording && id === noteRunId && conversationId &&
       selectedConversationId() === conversationId && form?.isConnected &&
-      form === document.querySelector('.crm-platform .view-order') &&
+      form === document.querySelector(':is(.crm-platform, #customerCol) .view-order') &&
       (productChange || freeShippingInput()?.checked);
     if (!current()) return;
     const products = orderProducts();
     const summary = products.length ? globalThis.PancakeProductSummary?.summarizeProducts(products) : '';
     if ((products.length && !summary) || id !== noteRunId) return;
 
-    const section = await waitForNote(() => document.querySelector('.crm-platform .note-print-order'), id);
+    const section = await waitForNote(() => document.querySelector(':is(.crm-platform, #customerCol) .note-print-order'), id);
     if (!section || !current()) return;
     const previous = sectionSummaries.get(section);
     const previousSummary = previous?.conversationId === conversationId ? previous.summary : undefined;
@@ -269,7 +269,7 @@
   }
 
   function productNoteState() {
-    return { form: document.querySelector('.crm-platform .view-order'),
+    return { form: document.querySelector(':is(.crm-platform, #customerCol) .view-order'),
       conversation: selectedConversationId(), products: JSON.stringify(orderProducts()) };
   }
 
@@ -294,9 +294,9 @@
     if (!isConversationPage()) return;
     if (records.some((record) => {
       const target = record.target.nodeType === Node.ELEMENT_NODE ? record.target : record.target.parentElement;
-      return target?.closest('.crm-platform') || [...record.addedNodes, ...record.removedNodes]
+      return target?.closest(':is(.crm-platform, #customerCol)') || [...record.addedNodes, ...record.removedNodes]
         .some((node) => node.nodeType === Node.ELEMENT_NODE &&
-          (node.matches('.crm-platform') || node.querySelector('.crm-platform')));
+          (node.matches(':is(.crm-platform, #customerCol)') || node.querySelector(':is(.crm-platform, #customerCol)')));
     })) checkProductNote();
   });
   productObserver.observe(document.body, { childList: true, subtree: true, characterData: true,
@@ -308,13 +308,13 @@
   const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   function freeShippingInput() {
-    const label = [...document.querySelectorAll('.crm-platform .view-order label')]
+    const label = [...document.querySelectorAll(':is(.crm-platform, #customerCol) .view-order label')]
       .find((element) => normalizedText(element) === 'Miễn phí giao hàng');
     return label?.querySelector('input[type="checkbox"]') || null;
   }
 
   function paymentRow(label) {
-    return [...document.querySelectorAll('.crm-platform .view-order .content-order-payment > .row-content-payment')]
+    return [...document.querySelectorAll(':is(.crm-platform, #customerCol) .view-order .content-order-payment > .row-content-payment')]
       .find((row) => normalizedText(row.firstElementChild) === label && visible(row)) || null;
   }
 
@@ -336,7 +336,7 @@
     const price = globalThis.PancakePricing.calculateDiscount(orderProducts(), total);
     if (!price || price.discount === 0) return true;
     return money(discountField()?.value) === price.discount &&
-      money(document.querySelector('.crm-platform .box-footer .text-final-price')?.textContent) === price.targetTotal;
+      money(document.querySelector(':is(.crm-platform, #customerCol) .box-footer .text-final-price')?.textContent) === price.targetTotal;
   }
 
   async function adjustMienSamPrice(id, conversationId) {
@@ -368,7 +368,7 @@
     }
 
     return Boolean(await waitForDom(() => {
-      const finalTotal = money(document.querySelector('.crm-platform .box-footer .text-final-price')?.textContent);
+      const finalTotal = money(document.querySelector(':is(.crm-platform, #customerCol) .box-footer .text-final-price')?.textContent);
       return money(discountField()?.value) === price.discount && finalTotal === price.targetTotal;
     }, sameOrder, 2000));
   }
@@ -396,7 +396,7 @@
     if (globalThis.PancakeProductSummary?.summarizeProducts(orderProducts()) !== summary) return;
     if (!priceVerifiedForCurrentOrder()) return;
 
-    const create = document.querySelector('.crm-platform .box-footer button.btn-save-order');
+    const create = document.querySelector(':is(.crm-platform, #customerCol) .box-footer button.btn-save-order');
     if (create && !create.disabled && normalizedText(create) === 'Tạo đơn') create.click();
   }
 
@@ -404,7 +404,7 @@
     const ids = new Set();
     // Pancake adds a new order card in the right sidebar after a successful
     // creation. It does not always send a new message to the conversation.
-    for (const header of document.querySelectorAll('.crm-platform .recent-orders .ant-collapse-header')) {
+    for (const header of document.querySelectorAll(':is(.crm-platform, #customerCol) :is(.recent-orders, .order-list) .ant-collapse-header')) {
       const number = normalizedText(header);
       if (/^\d+$/.test(number)) ids.add(`recent:${number}`);
     }
@@ -443,13 +443,19 @@
   }
 
   async function normalizeOrderTags(id, conversationId) {
-    for (const name of ['Đã Lên Đơn', 'Đã Gửi']) {
+    const defaultTags = ['Kiểm hàng', 'Câu hỏi', 'Mua hàng', 'Đã gửi', 'Hết hàng', 'Trả hàng'];
+    const buttons = [...document.querySelectorAll('button.btn-tag-item')];
+    const hasDefaultTags = buttons.length === defaultTags.length &&
+      defaultTags.every((name) => findTag(name));
+    const keep = hasDefaultTags ? ['Mua hàng', 'Đã gửi'] : ['Đã Lên Đơn', 'Đã Gửi'];
+    if (!keep.every((name) => findTag(name))) return;
+    for (const name of keep) {
       if (!await setTag(name, true, id, conversationId)) return;
     }
     const otherNames = [...document.querySelectorAll('button.btn-tag-item')]
       .filter((button) => button.querySelector('.ellipse'))
       .map(normalizedText)
-      .filter((name) => name !== 'Đã Lên Đơn' && name !== 'Đã Gửi');
+      .filter((name) => !keep.includes(name));
     for (const name of otherNames) await setTag(name, false, id, conversationId);
   }
 
@@ -465,7 +471,7 @@
     const input = event.target;
     if (!(input instanceof HTMLInputElement) || input.type !== 'checkbox') return;
     const label = input.closest('label');
-    if (!label || normalizedText(label) !== 'Miễn phí giao hàng' || !label.closest('.crm-platform')) return;
+    if (!label || normalizedText(label) !== 'Miễn phí giao hàng' || !label.closest(':is(.crm-platform, #customerCol)')) return;
     clearTimeout(productNoteTimer);
     observedProducts = productNoteState(); // The explicit shipping action owns this run.
     if (!input.checked) {
@@ -488,9 +494,9 @@
       return;
     }
     // Give deliberate user input priority over an opener/address selection still in progress.
-    if (event.isTrusted && event.target.closest('.crm-platform, .ant-select-dropdown')) runId++;
+    if (event.isTrusted && event.target.closest(':is(.crm-platform, #customerCol), .ant-select-dropdown')) runId++;
     const create = event.target.closest('button.btn-save-order');
-    if (create && create.closest('.crm-platform .box-footer')) {
+    if (create && create.closest(':is(.crm-platform, #customerCol) .box-footer')) {
       runId++; // Creating an order also cancels a pending opener retry.
       autoSubmitRunId++; // A click on Tạo đơn cancels any other pending automatic click.
       if (autoOrderTags) {

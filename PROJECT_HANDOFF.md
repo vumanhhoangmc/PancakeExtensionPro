@@ -1,5 +1,17 @@
 # Bàn giao kỹ thuật — Pancake Assistant Pro
 
+## POS tự mở menu in sau chọn nhóm — 0.10.5
+
+`selectGroup` đánh dấu readyToPrint chỉ khi changeSelection hoàn tất và nativeSelectedCount bằng số rowKey của nhóm. Sau finally giải phóng scanning, kiểm tra isCurrent(context) rồi dùng lại printGroup để mở menu. printGroup kiểm tra lại bộ lọc, selectedKeys, số đơn và modal. Đối chiếu POS đăng nhập 11/11: nút in path M214.67,72 nằm trong `.selection-table .ant-space-compact`, nên nhận cả container này và `.action-btn-container` cũ, chỉ bấm nút đang hiển thị và không disabled. Người dùng tự bấm Xác nhận trong menu In đơn. Chỉ đọc DOM trên đơn thật, kiểm thử chọn/in bằng fixture.
+
+## Hộp thư gộp/trang mới 0.10.5 — 11/11/2026
+
+Đối chiếu tab người dùng đang đăng nhập: trang màu cam dùng `#customerCol` với div bao ngoài class rỗng, tab `.tab-label-item` tên Tạo đơn, danh sách đơn `.order-list .ant-collapse-header` (ID có số 0 đầu). Trang cũ dùng `.crm-platform`, tab Tạo mới, `.recent-orders`. Cấu trúc `.view-order`, sản phẩm, thanh toán, ghi chú/nút Lưu và footer/nút Tạo đơn vẫn khớp. Selector cũ yêu cầu `.crm-platform` nên mọi luồng bỏ qua trang mới.
+
+`content.js` dùng `:is(.crm-platform, #customerCol)` cho truy vấn và listener/observer, nhận hai tên tab và hai container danh sách đơn. Không phụ thuộc màu hoặc ID trang. Giữ guard hội thoại, hủy tác vụ và xác nhận giá/ghi chú trước tạo đơn. `normalizeOrderTags` kiểm tra có đủ hai tag đích trước khi tích bất cứ tag nào. Trang thật có sáu tag Kiểm hàng/Câu hỏi/Mua hàng/Đã gửi/Hết hàng/Trả hàng. Khi khớp đủ bộ sáu tag này, giữ Mua hàng và Đã gửi theo yêu cầu người dùng, nhận diện theo tên dù đổi vị trí. Bộ tag khác dùng Đã Lên Đơn và Đã Gửi. Không tự tạo/đổi tên tag trong cài đặt Pancake.
+
+Kiểm chứng Chrome fixture 28/28 ở mỗi giao diện (56 lượt), gồm tín hiệu order-list và thiếu tag. Node pricing/summary 9/9, cú pháp content/popup/fixture đạt. Chỉ mở form và ô ghi chú trống trên trang thật để đối chiếu, không thêm sản phẩm/đổi giá/tạo đơn hoặc tag thật. AI Beta vẫn dùng adapter riêng. Cần reload extension và tab cho lượt kiểm chứng vận hành thật.
+
 ## Giá Miến Sâm 0.10.4 — 08/11/2026
 
 Mốc 2 kg trong `pricing.js` là 155.000đ. `pricing.test.js` kiểm tra mốc mới và trường hợp tổng tiền bằng mốc. Phát hành bằng tag `v0.10.4` trên commit chứa thay đổi.
@@ -256,7 +268,7 @@ Content script POS chỉ chạy ở `/shop/{id}/order`. Công tắc `posGroupPri
 
 `pos-groups.js` chuẩn hóa tiền tố năm, gom `Miến Sợi Nhỏ/To` cùng biến thể `Miến Sâm Sợi Nhỏ/To`, nhân quy cách `kg/g` với số lượng và tạo khóa nhóm không phụ thuộc thứ tự sản phẩm. Sản phẩm không có quy cách được gom theo tên và số lượng. Bảng kết quả hiện thành phần, số đơn và mã đơn. Script đối chiếu số đơn đã quét với số ở trạng thái POS đang chọn; nếu thiếu, không cho in từ kết quả chưa đủ. Đơn thiếu tên/số lượng được liệt kê ở mục cần xem lại.
 
-Người dùng bấm **Chọn nhóm để in** để tích các checkbox POS của đúng nhóm, kể cả các dòng ngoài vùng render hiện tại. Script từ chối khi POS đang có đơn được chọn ngoài nhóm và xác nhận `Đã chọn: N` bằng số đơn của nhóm. Nút **In nhóm bằng POS** bấm nút in hàng loạt gốc trong `.action-btn-container .ant-space-compact` (nhận dạng biểu tượng máy in), để POS in phiếu đơn từng đơn theo cấu hình sẵn. Không tự in khi vừa quét. Sau khi đổi bộ lọc phải quét lại. Khi thử mã, không bấm nút in trên đơn thật chỉ để xem kết quả.
+Người dùng bấm **Chọn nhóm để in** để tích các checkbox POS của đúng nhóm, kể cả các dòng ngoài vùng render hiện tại. Script từ chối khi POS đang có đơn được chọn ngoài nhóm và xác nhận `Đã chọn: N` bằng số đơn của nhóm. Sau khi chọn đủ, extension gọi printGroup để tự mở menu In đơn bằng nút in hàng loạt trong `.selection-table .ant-space-compact` hoặc `.action-btn-container .ant-space-compact`. Người dùng kiểm tra menu và bấm Xác nhận. Nút **In nhóm bằng POS** cũng dùng cùng luồng để mở lại menu. Sau khi đổi bộ lọc phải quét lại. Khi thử mã, không bấm nút in trên đơn thật chỉ để xem kết quả.
 
 ## Bộ chọn DOM đã xác nhận trên Pancake
 
